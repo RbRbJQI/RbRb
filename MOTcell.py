@@ -185,9 +185,9 @@ class MOT:
         Cooling_AOM.go_low(start-0*ms)
         Repump_AOM.go_low(start)
         OptPump_AOM.go_low(start)
-        Cool_int.constant(start, value=0, units='Vshift')
-        Repump_int.constant(start, value=0, units='Vshift')
-        OptPump_int.constant(start, value=0, units='Vshift')
+        Cool_int.constant(start, value=0, units='Vs')
+        Repump_int.constant(start, value=0, units='Vs')
+        OptPump_int.constant(start, value=0, units='Vs')
         # Shutter_Cooling.close(start)
         # Shutter_Repump.close(start)
         quad_MOT.constant(start,value=1)
@@ -258,7 +258,7 @@ class MOT:
             # self.set_bias(start-1*ms, B_bias=-B_bias_optpump/np.linalg.norm(B_bias_optpump)*0.2)
             
             Cooling_AOM.go_low(start-t_of_f)
-            Cool_int.constant(start-t_of_f, value=0, units='Vshift')
+            Cool_int.constant(start-t_of_f, value=0, units='Vs')
             # Repump_AOM.go_low(start-t_of_f)
             # Repump_int.constant(start-t_of_f, -0.057)
             Repump_AOM.go_high(start)
@@ -535,7 +535,7 @@ if __name__ == '__main__':
 
     New_MOT = MOT(t, cooling_freq=cent, repump_freq=repump_freq, quad_curr=quad) #82.231 1->1' 84.688 1->2'
     t += 1e-3
-    # exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
+    exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
     t += 30e-3
     # t += New_MOT.probe_fluo(t, probe_fluo_time, 'bg') # fluo imaging
     t += 30e-3
@@ -544,16 +544,16 @@ if __name__ == '__main__':
     t+= 30e-3
     
     
-    t = New_MOT.load(t, load_time, B_bias_MOT, UV_onoff=False)
+    t = New_MOT.load(t, load_time, B_bias_MOT, UV_onoff=True)
     # MOT_YZ_flea.expose(t-10*ms,'MOT_fluo_img', trigger_duration=0.1*ms, frametype='fluo_img')
     # t = New_MOT.move(t, dur_MOT_move, np.array(B_bias_MOT), np.array(B_bias_move))
-    #t = New_MOT.compress(t, CMOT_dur, quad, compressed_MOT_quad, res+compress_freq_start*MHz, res+compress_freq_end*MHz, np.array(B_bias_move), np.array(B_bias_com)) # CMOT
+    # t = New_MOT.compress(t, CMOT_dur, quad, compressed_MOT_quad, res+compress_freq_start*MHz, res+compress_freq_end*MHz, np.array(B_bias_move), np.array(B_bias_com)) # CMOT
 
 
-    #t = New_MOT.pol_grad(t, dur_mol, molasses_freq_start, molasses_freq_end, np.array(B_bias_mol)) # Molasses
+    # t = New_MOT.pol_grad(t, dur_mol, molasses_freq_start, molasses_freq_end, np.array(B_bias_mol)) # Molasses
     # # t = New_MOT.depump(t,4*ms) 
-    #t=New_MOT.opt_pump(t, duration=dur_OptPumping*ms)
-    #t = New_MOT.mag_trap(t, duration=dur_magtrap*ms, quad_start=quad_trap, B_bias_start=np.array(B_bias_capture_quad), B_bias_final= np.array(B_bias_final_quad))
+    # t=New_MOT.opt_pump(t, duration=dur_OptPumping*ms)
+    # t = New_MOT.mag_trap(t, duration=dur_magtrap*ms, quad_start=quad_trap, B_bias_start=np.array(B_bias_capture_quad), B_bias_final= np.array(B_bias_final_quad))
     
     
     # # t = New_MOT.move(t, dur_tran_bias*ms, np.array(B_bias_final_quad), np.array(B_bias_tran))

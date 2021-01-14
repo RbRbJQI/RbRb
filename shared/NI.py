@@ -3,6 +3,8 @@ from labscript_utils import h5_lock
 from labscript_utils import import_or_reload
 from labscript_utils.unitconversions.linear_coil_driver import BidirectionalCoilDriver
 from labscript_utils.unitconversions.AOMAMP import AOMAMP
+from labscript_utils.unitconversions.quad_driver import quad_driver
+from labscript_utils.unitconversions.quad_driver_2 import quad_driver_2
 
 from labscript_devices.NI_DAQmx.labscript_devices import NI_USB_6229
 from labscript_devices.NI_DAQmx.labscript_devices import NI_PCIe_6738
@@ -47,10 +49,10 @@ DigitalOut(name='x_shim_disable', parent_device=ni_usb_6229, connection='port0/l
 DigitalOut(name='y_shim_disable', parent_device=ni_usb_6229, connection='port0/line13')
 DigitalOut(name='z_shim_disable', parent_device=ni_usb_6229, connection='port0/line14')
 DigitalOut(name='UV', parent_device=ni_usb_6229, connection='port0/line15')
-AnalogOut(name='quad_MOT', parent_device=ni_usb_6229, connection='ao0')
-AnalogOut(name='transport1', parent_device=ni_usb_6229, connection='ao1')
-AnalogOut(name='transport2', parent_device=ni_usb_6229, connection='ao2')
-AnalogOut(name='transport3', parent_device=ni_usb_6229, connection='ao3')
+AnalogOut(name='quad_MOT', parent_device=ni_usb_6229, connection='ao0', unit_conversion_class=quad_driver, unit_conversion_parameters={'A_per_V':-40, 'Gcm_per_A':2.4, 'A_offset':0, 'A_min':0} )
+AnalogOut(name='transport1', parent_device=ni_usb_6229, connection='ao1', unit_conversion_class=quad_driver_2, unit_conversion_parameters={'A_per_V':-12, 'Gcm_per_A':2.4, 'A_offset':0, 'A_min':0})
+AnalogOut(name='transport2', parent_device=ni_usb_6229, connection='ao2', unit_conversion_class=quad_driver, unit_conversion_parameters={'A_per_V':-40, 'Gcm_per_A':2.4, 'A_offset':0, 'A_min':0})
+AnalogOut(name='transport3', parent_device=ni_usb_6229, connection='ao3', unit_conversion_class=quad_driver, unit_conversion_parameters={'A_per_V':-40, 'Gcm_per_A':2.4, 'A_offset':0, 'A_min':0})
 AnalogIn(name='testin0', parent_device=ni_usb_6229, connection='ai0')
 AnalogIn(name='testin1', parent_device=ni_usb_6229, connection='ai1')
 AnalogIn(name='testin2', parent_device=ni_usb_6229, connection='ai2')

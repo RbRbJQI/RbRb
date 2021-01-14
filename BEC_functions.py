@@ -3,20 +3,12 @@ from labscriptlib.common.utils import Limits
 from labscriptlib.common.functions import *
 from labscript_utils import import_or_reload
 
-import_or_reload('labscriptlib.RbRb.connection_table')
 MHz = 1e6
 us = 1e-6
 ms = 1e-3
-nt_step = 0.15*ms
-#calibrated intensity zeros
-probe_z = -0.06
-cool_z = -0.058
-rep_z = -0.057
-opt_z = -0.06
-#
+
 import_or_reload('labscriptlib.RbRb.transport.new_transport_optimisation')
 from labscriptlib.RbRb.transport.new_transport_optimisation import transport
-tswitch = transport.t_switchover
 class current_switch:
     def __init__(self, time_t0_on, time_t0_off, time_t1_on, time_t1_off, time_te_on, time_te_off):
         self.time_t0_on = time_t0_on
@@ -26,14 +18,6 @@ class current_switch:
         self.time_te_on = time_te_on
         self.time_te_off = time_te_off
         
-def set_freq(ch, t, freq):
-    ch.setfreq(t, freq)
-    # ch.setfreq(t+nt_step, freq)
-    
-def set_amp(ch, t, amp):
-    ch.setamp(t, amp)
-    # ch.setamp(t+nt_step, amp)
-
 def Channel_n(n):
     if n==0:
         return 4#biasx, t_biasx
@@ -64,19 +48,19 @@ class MOT:
         t3_1.go_low(t)
         t4_0.go_low(t)
         t4_1.go_low(t)
-        set_freq(Cooling, t, cent)
-        set_freq(Repump, t, self.repump_freq)
-        set_amp(Repump, t, 1)
-        set_amp(Cooling, t, 1)
+        Cooling.setfreq(t, MOT_cooling_freq)
+        Cooling.setamp(t, 1)
+        Repump.setfreq(t, self.repump_freq)
+        Repump.setamp(t, 1)
         evap_switch.go_low(t)
         evap_int.constant(t, 0)
         self.t_t, self.t_I = [], []
         MOT_Probe_AOM.go_low(t)
-        Probe_int.constant(t, probe_z)
+        Probe_int.constant(t, 0, units="Vs")
         Cooling_AOM.go_low(t)
         Repump_AOM.go_low(t)
         OptPump_AOM.go_low(t)
-        UV.go_low(t)
+       # UV.go_low(t)
     # Initialize the shutters    
     # IAN: make "DefaultValues" method that init calls and that you call at end end of sequence.
     
@@ -87,10 +71,10 @@ class MOT:
         UV.go_low(t+min(load_time,dur_UV))
         t1_enable.go_high(t-1*ms)
         quad_MOT.constant(t, value=self.quad_curr)
-        set_freq(Cooling, t, cent)
-        set_freq(Repump, t, self.repump_freq)
-        set_amp(Repump, t, 1)
-        set_amp(Cooling, t, 1)
+        Cooling.setfreq(t, MOT_cooling_freq)
+        Cooling.setamp(t, 1)
+        Repump.setfreq(t, self.repump_freq)
+        Repump.setamp(t, 1)
         Cooling_AOM.go_high(t)
         Repump_AOM.go_high(t)
         self.set_bias(t, B_bias)
@@ -136,29 +120,17 @@ class MOT:
         
     def opt_pump(self, start, duration):
         Cooling_AOM.go_low(start-opt_adv)
-        Cool_int.constant(start, cool_z)
-        set_freq(Cooling, start-opt_adv, res+opt_f*MHz)
+        Cool_int.constant(start, 0, units="Vs")
+        Cooling.setfreq(start-opt_adv, res+opt_f*MHz)
         # IAN: Repump power matters here
         OptPump_AOM.go_high(start)
         OptPump_AOM.go_low(start+duration)
         OptPump_int.constant(start, OptPumpint)
-        OptPump_int.constant(start+duration, opt_z)
+        OptPump_int.constant(start+duration, 0, units="Vs")
         Repump_int.constant(start, opt_rep_int)
         Repump_AOM.go_low(start+duration)
-        Repump_int.constant(start+duration, rep_z)
+        Repump_int.constant(start+duration, 0, units="Vs")
         self.set_bias(start-0.5*ms, np.array(B_bias_optpump)) # IAN: How fast does bias actually change? (Field)
-        # def parabolay(t, dur, h, c): return -t*(t-dur)*h/dur**2 *4 +c
-        # b_mi = (1,7)
-        # x_shim.customramp(start+duration, 2*ms, LineRamp, B_bias_optpump[0], 0.5*B_bias_optpump[0], samplerate=1/0.02/ms, units='A')
-        # y_shim.customramp(start+duration, 2*ms, parabolay, 1, B_bias_optpump[1], samplerate=1/0.02/ms, units='A')
-        # z_shim.customramp(start+duration, 2*ms, LineRamp, B_bias_optpump[2], 0.5*B_bias_optpump[2], samplerate=1/0.02/ms, units='A')
-        
-        # x_shim.customramp(start+duration, 2*ms, LineRamp, B_bias_optpump[0], b_mi[0], samplerate=1/0.02/ms, units='A')
-        # y_shim.customramp(start+duration, 2*ms, parabolay, 1, B_bias_optpump[1], samplerate=1/0.02/ms, units='A')
-        # z_shim.customramp(start+duration, 2*ms, LineRamp, B_bias_optpump[2], b_mi[1], samplerate=1/0.02/ms, units='A')
-        # x_shim.customramp(start+duration+2*ms, 2.5*ms, LineRamp, b_mi[0], -B_bias_optpump[0]/np.linalg.norm(B_bias_optpump)*0.7, samplerate=1/0.02/ms, units='A')
-        # y_shim.customramp(start+duration+2*ms, 2*ms, parabolay, 1, B_bias_optpump[1], samplerate=1/0.02/ms, units='A')
-        # z_shim.customramp(start+duration+2*ms, 2*ms, LineRamp, b_mi[1], -1*B_bias_optpump[2]/np.linalg.norm(B_bias_optpump)*0.7, samplerate=1/0.02/ms, units='A')
         return start+duration
         
     def mag_trap(self, start, duration, quad_start, B_bias_start, B_bias_final):
@@ -181,13 +153,14 @@ class MOT:
         return start+duration
         
     def deload(self, start):
+        B_bias_mol = (0,0,B_bias_mol_z)
         UV.go_low(start)
         Cooling_AOM.go_low(start-0*ms)
         Repump_AOM.go_low(start)
         OptPump_AOM.go_low(start)
-        Cool_int.constant(start, value=0, units='Vshift')
-        Repump_int.constant(start, value=0, units='Vshift')
-        OptPump_int.constant(start, value=0, units='Vshift')
+        Cool_int.constant(start, value=0, units='Vs')
+        Repump_int.constant(start, value=0, units='Vs')
+        OptPump_int.constant(start, value=0, units='Vs')
         # Shutter_Cooling.close(start)
         # Shutter_Repump.close(start)
         quad_MOT.constant(start,value=1)
@@ -208,7 +181,7 @@ class MOT:
         
     def depump(self, start, duration):
         Repump_AOM.go_low(start)
-        Repump_int.constant(start, -0.057)
+        Repump_int.constant(start, 0, units="Vs")
         return start+duration
         
     def fluorescence(self, start, end):
@@ -227,19 +200,20 @@ class MOT:
     def probe_yz(self, start, duration, frametype):
         if not frametype=='bg':
             do8.go_high(start)
-            Probe_int.constant(start, probe_MOT_int)
+            Probe_int.constant(start, probe_MOT_int, units="Vs")
             MOT_Probe_AOM.go_high(start)
             MOT_Probe_AOM.go_low(start+duration)
-            Probe_int.constant(start+duration, probe_z)
+            Probe_int.constant(start+duration, 0, units="Vs")
 
-            set_freq(Cooling, start-prob_adv, res+0.0*MHz) # IAN: usually better to set this at the end of OP
+            Cooling.setfreq(start-prob_adv, res+0.0*MHz)
+            
             
             # print(start)
             Repump_AOM.go_high(start)
-            Repump_int.constant(start, 0.6) #0.6 before
+            Repump_int.constant(start, 0.6, units="Vs") #0.6 before
             # Repump_int.constant(start, -0.057)
             # Repump_AOM.go_low(start)
-            # Repump_int.constant(start, rep_z)
+            # Repump_int.constant(start, 0, units="Vs")
             # Shutter_Repump.open(start-prob_adv-10*ms)
             
             Shutter_Probe.open(start-3*ms)
@@ -253,12 +227,12 @@ class MOT:
             Shutter_Opt_pumping.open(start-0.9*ms)
             OptPump_AOM.go_low(start+duration)
             OptPump_int.constant(start+duration, -0.06)
-            set_freq(Cooling, start-prob_adv, res+probe_xy_freq*MHz) 
+            Cooling.setfreq(start-prob_adv, res+probe_xy_freq*MHz)
             
             # self.set_bias(start-1*ms, B_bias=-B_bias_optpump/np.linalg.norm(B_bias_optpump)*0.2)
             
             Cooling_AOM.go_low(start-t_of_f)
-            Cool_int.constant(start-t_of_f, value=0, units='Vshift')
+            Cool_int.constant(start-t_of_f, value=0, units='Vs')
             # Repump_AOM.go_low(start-t_of_f)
             # Repump_int.constant(start-t_of_f, -0.057)
             Repump_AOM.go_high(start)
@@ -270,7 +244,7 @@ class MOT:
         MOT_XY_flea.expose(start,'abs_img', trigger_duration=duration, frametype=frametype) # IAN: needs ~10 us pretrigger to get our of contineous clean mode.
         
     def probe_fluo(self, start, duration, frametype):
-        set_freq(Cooling, start-prob_adv, res+detun/16*MHz)
+        Cooling.setfreq(start-prob_adv, res+detun/16*MHz)
         # do8.go_high(start)
         Cooling_AOM.go_high(start)
         Cool_int.constant(start, mot_cool_int)
@@ -293,7 +267,7 @@ class MOT:
             MOT_Probe_AOM.go_low(start+duration)
             
             Shutter_Probe.open(start-prob_adv)
-            set_freq(Cooling, start-prob_adv, res)
+            Cooling.setfreq(start-prob_adv, res)
             
         Science_flea.expose(start-0.01*ms,'science_img', trigger_duration=duration, frametype=frametype)
         
@@ -315,98 +289,16 @@ class MOT:
             # for time in switch[ch].time_te_off:
                 # exec("t"+str(ch+1)+"_enable.go_low("+str(t+time)+")")
 
-        # if order=='normal':
-            # t2_enable.go_high(t)
-            # t3_enable.go_high(t + tswitch[0])
-            # t4_enable.go_high(t + tswitch[1]-0*ms)
-            # t1_enable.go_low(t + tswitch[1])
-
-
-            # t1_0.go_high(t + tswitch[2])
-            # t2_enable.go_low(t + tswitch[2])
-            # t1_enable.go_high(t + tswitch[2])
-
-            # t2_0.go_high(t + tswitch[3])
-            # t3_enable.go_low(t + tswitch[3])
-            # t2_enable.go_high(t + tswitch[3])
-
-            # t3_0.go_high(t + tswitch[4])
-            # t4_enable.go_low(t + tswitch[4])
-            # t3_enable.go_high(t + tswitch[4])
-
-            # # t4_0.go_high(t + tswitch[5])
-            # # t1_enable.go_low(t + tswitch[5])
-            # # t4_enable.go_high(t + tswitch[5])
-
-            # # t1_0.go_low(t + tswitch[6])
-            # # t1_1.go_high(t + tswitch[6])
-            # # t2_enable.go_low(t + tswitch[6])
-            # # t1_enable.go_high(t + tswitch[6])
-
-            # # t3_0.go_low(t + tswitch[7])
-            # # t3_1.go_high(t + tswitch[7])
-            # # t2_enable.go_low(t + tswitch[8])
-            
-            
-            # # t4_0.go_low(t + tswitch[8])
-            # # t4_1.go_high(t + tswitch[8])
-            
-            # # t1_enable.go_low(t + tswitch[9])
-        # else:
-            # # t2_enable.go_low(2*start+duration-t)
-            # # t3_enable.go_low(2*start+duration-t - tswitch[0])
-            # # t4_enable.go_low(2*start+duration-t - tswitch[1])
-            # # t1_enable.go_high(2*start+duration-t - tswitch[1])
-
-
-            # # t1_0.go_low(2*start+duration-t - tswitch[2])
-            # # t2_enable.go_high(2*start+duration-t - tswitch[2])
-            # # t1_enable.go_low(2*start+duration-t - tswitch[2])
-
-            # # t2_0.go_low(2*start+duration-t - tswitch[3])
-            # # t3_enable.go_high(2*start+duration-t - tswitch[3])
-            # # t2_enable.go_low(2*start+duration-t - tswitch[3])
-
-            # # t3_0.go_low(2*start+duration-t - tswitch[4])
-            # # t4_enable.go_high(2*start+duration-t - tswitch[4])
-            # # t3_enable.go_low(2*start+duration-t - tswitch[4])
-
-            # # t4_0.go_low(2*start+duration-t - tswitch[5])
-            # # t1_enable.go_high(2*start+duration-t - tswitch[5])
-            # # t4_enable.go_low(2*start+duration-t - tswitch[5])
-
-            # # t1_0.go_high(2*start+duration-t - tswitch[6])
-            # # t1_1.go_low(2*start+duration-t - tswitch[6])
-            # # t2_enable.go_high(2*start+duration-t - tswitch[6])
-            # # t1_enable.go_low(2*start+duration-t - tswitch[6])
-
-            # # t3_0.go_high(2*start+duration-t - tswitch[7])
-            # # t3_1.go_low(2*start+duration-t - tswitch[7])
-            
-            
-            # # t4_0.go_high(2*start+duration-t - tswitch[8])
-            # # t4_1.go_low(2*start+duration-t - tswitch[8])
-            
-            # # t1_enable.go_high(2*start+duration-t - tswitch[9])
-            # pass
             
     def transport_currents(self, t, duration, transport_currents_interp_ch):
         return transport_currents_interp_ch(t)
         
     def new_transport(self, start, duration, B_bias_start, bias_r_yx, inverse=False):
         t = start
-        # import_or_reload('labscriptlib.RbRb.transport.new_transport_optimisation')
-        # from labscriptlib.RbRb.transport.new_transport_optimisation import transport
-        # tswitch = transport.t_switchover
-        # print(t, tswitch)
         curr_ratio=[curr_r0, curr_r1, curr_r2, curr_r3]
         from scipy.interpolate import interp1d
         self.t_t = np.arange(0, duration, transport_step)
         I_coils = transport.currents_at_time(self.t_t)
-        # import matplotlib.pyplot as plt
-        # for i in range(len(I_coils)):   plt.plot(self.t_t, I_coils[i], label=str(i))
-        # plt.legend()
-        # plt.show()
         if inverse:
             I_coils = np.array([np.flip(I_coil) for I_coil in I_coils])
         # #-------------#probe along the line at the center of certain coils.
@@ -436,10 +328,10 @@ class MOT:
         
         self.t_I = np.zeros((6,len(self.t_t)))
         for ch in [0,2,3]:
-            self.t_I[ch,:] = transport.currents_for_channel(self.t_t, duration, ch+1, ratio=-1/40*curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
-        self.t_I[1,:] = transport.currents_for_channel(self.t_t, duration, 1+1, ratio=-1/40*10/3*curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
-        self.t_I[4,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5, B_bias=B_bias_start[0]) 
-        self.t_I[5,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5*bias_ratio_yx, B_bias=B_bias_start[1])
+            self.t_I[ch,:] = transport.currents_for_channel(self.t_t, duration, ch+1, ratio= curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
+        self.t_I[1,:] = transport.currents_for_channel(self.t_t, duration, 1+1, ratio= curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
+        self.t_I[4,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=1, B_bias=B_bias_start[0]) 
+        self.t_I[5,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=1, B_bias=B_bias_start[1])
         transport_currents_interp = [interp1d(
             self.t_t, self.t_I[ch,:], 'cubic', fill_value='extrapolate'
         ) for ch in range(6)]
@@ -580,15 +472,6 @@ if __name__ == '__main__':
     New_MOT.__init__(t, cooling_freq=cent, repump_freq=repump_freq, quad_curr=quad)
     # UV.go_high(t)
     
-    # set_freq(Cooling, t-0.01, cent)
-    # New_MOT.set_bias(t-0.01, [0,0,0])
-    # quad_MOT.constant(t-0.01,value=1)
-    # # transport1.constant(t-0.01,value=1)
-    # # Cool_int.constant(t+0.12*ms, 0)
-    # # Repump_int.constant(t+0.12*ms, 0)
-    # Shutter_Probe.close(t)
-    # # t+=9
-    # # plt.show()
     t+=1
     stop(t)
     

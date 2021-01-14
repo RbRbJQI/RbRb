@@ -3,28 +3,21 @@ from labscriptlib.common.utils import Limits
 from labscriptlib.common.functions import *
 from labscript_utils import import_or_reload
 from labscriptlib.RbRb.BEC_functions import *
+from labscriptlib.RbRb.transport.new_transport_optimisation import transport
 
+import_or_reload('labscriptlib.RbRb.transport.new_transport_optimisation')
 import_or_reload('labscriptlib.RbRb.connection_table')
+
 MHz = 1e6
 us = 1e-6
 ms = 1e-3
-nt_step = 0.15*ms
-#calibrated intensity zeros
-probe_z = -0.06
-cool_z = -0.058
-rep_z = -0.057
-opt_z = -0.06
-#
-import_or_reload('labscriptlib.RbRb.transport.new_transport_optimisation')
-from labscriptlib.RbRb.transport.new_transport_optimisation import transport
-tswitch = transport.t_switchover
 
 probe_yz_time = 0.008*ms
 probe_xy_time = 0.008*ms
 probe_science_time = 0.008*ms
 probe_fluo_time = 1*ms
 
-B_bias_mol = (0,0,B_bias_mol_z)#*np.array([B_bias_mol_x,B_bias_mol_y,B_bias_mol_z])
+
 B_bias_optpump = np.array([B_bias_optpump_x,B_bias_optpump_y,B_bias_optpump_z])
 B_bias_capture_quad = np.array([B_bias_capture_quad_x,B_bias_capture_quad_y,B_bias_capture_quad_z])
 B_bias_final_quad = np.array([B_bias_final_quad_x,B_bias_final_quad_y,B_bias_final_quad_z])
@@ -33,10 +26,12 @@ B_bias_com = np.array([B_bias_com_x,B_bias_com_y, B_bias_com_z])
 B_bias_MOT = np.array([B_bias_mot_x,B_bias_mot_y, B_bias_mot_z])
 B_bias_move = 0*np.array([B_bias_mov_x, B_bias_mov_y, B_bias_mov_z])
 dur_magtrap = hold_time_start + hold_time_com + dur_quad_ramp
+
+
 start()
 t = 0
 
-New_MOT = MOT(t, cooling_freq=cent, repump_freq=repump_freq, quad_curr=quad) #82.231 1->1' 84.688 1->2'
+New_MOT = MOT(t, cooling_freq=MOT_cooling_freq, repump_freq=repump_freq, quad_curr=quad) #82.231 1->1' 84.688 1->2'
 t += 1e-3
 # exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
 t += 30e-3
