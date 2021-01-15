@@ -25,8 +25,8 @@ Trigger(name='camera_trigger_PI', parent_device=pb0.direct_outputs, connection='
 # Trigger(name='scope_trigger', parent_device=pb0.direct_outputs,
         # connection='flag 16', trigger_edge_type='rising')
 
-import_or_reload('mother_NI_connection')
-import_or_reload('mother_camera_connection')
+import_or_reload('shared.NI')
+import_or_reload('shared.camera')
 
 
 #TekScope(name = 'monitor1', addr='USB0::0x0699::0x0368::C102918::INSTR')#, parent_device=do2, connection='trigger', trigger_edge_type='rising')

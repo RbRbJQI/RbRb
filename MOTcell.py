@@ -547,13 +547,13 @@ if __name__ == '__main__':
     t = New_MOT.load(t, load_time, B_bias_MOT, UV_onoff=True)
     # MOT_YZ_flea.expose(t-10*ms,'MOT_fluo_img', trigger_duration=0.1*ms, frametype='fluo_img')
     # t = New_MOT.move(t, dur_MOT_move, np.array(B_bias_MOT), np.array(B_bias_move))
-    # t = New_MOT.compress(t, CMOT_dur, quad, compressed_MOT_quad, res+compress_freq_start*MHz, res+compress_freq_end*MHz, np.array(B_bias_move), np.array(B_bias_com)) # CMOT
+    t = New_MOT.compress(t, CMOT_dur, quad, compressed_MOT_quad, res+compress_freq_start*MHz, res+compress_freq_end*MHz, np.array(B_bias_move), np.array(B_bias_com)) # CMOT
 
 
-    # t = New_MOT.pol_grad(t, dur_mol, molasses_freq_start, molasses_freq_end, np.array(B_bias_mol)) # Molasses
+    t = New_MOT.pol_grad(t, dur_mol, molasses_freq_start, molasses_freq_end, np.array(B_bias_mol)) # Molasses
     # # t = New_MOT.depump(t,4*ms) 
-    # t=New_MOT.opt_pump(t, duration=dur_OptPumping*ms)
-    # t = New_MOT.mag_trap(t, duration=dur_magtrap*ms, quad_start=quad_trap, B_bias_start=np.array(B_bias_capture_quad), B_bias_final= np.array(B_bias_final_quad))
+    t=New_MOT.opt_pump(t, duration=dur_OptPumping*ms)
+    t = New_MOT.mag_trap(t, duration=dur_magtrap*ms, quad_start=quad_trap, B_bias_start=np.array(B_bias_capture_quad), B_bias_final= np.array(B_bias_final_quad))
     
     
     # # t = New_MOT.move(t, dur_tran_bias*ms, np.array(B_bias_final_quad), np.array(B_bias_tran))
