@@ -7,8 +7,8 @@ MHz = 1e6
 us = 1e-6
 ms = 1e-3
 
-import_or_reload('labscriptlib.RbRb.transport.new_transport_optimisation')
-from labscriptlib.RbRb.transport.new_transport_optimisation import transport
+import_or_reload('coil_config')
+
 class current_switch:
     def __init__(self, time_t0_on, time_t0_off, time_t1_on, time_t1_off, time_te_on, time_te_off):
         self.time_t0_on = time_t0_on

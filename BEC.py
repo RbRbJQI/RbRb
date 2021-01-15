@@ -3,10 +3,8 @@ from labscriptlib.common.utils import Limits
 from labscriptlib.common.functions import *
 from labscript_utils import import_or_reload
 from labscriptlib.RbRb.BEC_functions import *
-from labscriptlib.RbRb.transport.new_transport_optimisation import transport
 
-import_or_reload('labscriptlib.RbRb.transport.new_transport_optimisation')
-import_or_reload('labscriptlib.RbRb.connection_table')
+import_or_reload('labscriptlib.RbRb.mother_connection_table')
 
 MHz = 1e6
 us = 1e-6
