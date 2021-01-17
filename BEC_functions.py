@@ -9,30 +9,35 @@ MHz = 1e6
 us = 1e-6
 ms = 1e-3
 
+'''
+General functions
+
+'''
+#(
 def set_bias(start, B_bias):
     x_shim.constant(start, B_bias[0], units='A')
     y_shim.constant(start, B_bias[1], units='A')
     z_shim.constant(start, B_bias[2], units='A')
+#)
+'''
 
+Experimental stages
+
+
+'''
+#(
 def Initial_State(t):
 # Coils
-    coil_ch1.constant(t, -10, units="A") 
-    coil_ch2.constant(t, -10, units="A")
-    coil_ch3.constant(t, -10, units="A")
-    coil_ch4.constant(t, -10, units="A")
-    coil_ch1_enable.go_low(t)
-    coil_ch2_enable.go_low(t)
-    coil_ch3_enable.go_low(t)
-    coil_ch4_enable.go_low(t)
+    All_coil_off(t)
     MOT_quad_select(t)   
     outer_coil_1_select(t)
     inner_coil_1_select(t)
     outer_coil_2_select(t)
     
 # Lasers
-    Cooling.setfreq(t, MOT_cooling_freq)
+    Cooling.setfreq(t, MOT_cooling_freq*MHz)
     Cooling.setamp(t, 1)
-    Repump.setfreq(t, MOT_repump_freq)
+    Repump.setfreq(t, MOT_repump_freq*MHz)
     Repump.setamp(t, 1)
 
     Probe_AOM.go_low(t)
@@ -56,23 +61,21 @@ def Initial_State(t):
     
     evap_switch.go_low(t)
     evap_int.constant(t, 0)
-    
-    
-    
-def MOT_load(t, B_bias):
+          
+def MOT_load(t):
 # UV
     if UV_onoff:
         UV.go_high(t)
-    UV.go_low(t+MOT_load_time)
+        UV.go_low(t+MOT_load_time)
 # Coils    
-    coil_ch1.constant(t, MOT_quad_curr, units="A")
-    coil_ch1_enable.go_high(t-1*ms) 
-    MOT_quad_select(t)
-    set_bias(t, B_bias)
+    # MOT quad is selected in Initial_State
+    exec(MOT_quad_ch + "_enable.go_high(t-1*ms)")
+    exec(MOT_quad_ch + ".constant(t, MOT_quad_curr, units='A')")     
+    set_bias(t, np.array([MOT_B_bias_x,MOT_B_bias_y, MOT_B_bias_z]))
 # Lasers    
-    Cooling.setfreq(t, MOT_cooling_freq)
+    Cooling.setfreq(t, MOT_cooling_freq*MHz)
     Cooling.setamp(t, 1)
-    Repump.setfreq(t, MOT_repump_freq)
+    Repump.setfreq(t, MOT_repump_freq*MHz)
     Repump.setamp(t, 1)
     
     Cooling_AOM.go_high(t)
@@ -85,17 +88,95 @@ def MOT_load(t, B_bias):
 
     return t + MOT_load_time   
 
+def CMOT(t):
+# Coils
+    sample_rate=1/(0.5*ms)
+    exec(MOT_quad_ch + ".customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_quad_curr_start, CMOT_quad_curr_end, CMOT_duration*ms, samplerate=sample_rate, units='A')")
+    CMOT_B_bias_start = np.array([0,0,0])
+    CMOT_B_bias_end = np.array([CMOT_B_bias_end_x,CMOT_B_bias_end_y,CMOT_B_bias_end_z])
+    x_shim.customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_B_bias_start[0], CMOT_B_bias_end[0], CMOT_duration*ms, samplerate=sample_rate, units='A')
+    y_shim.customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_B_bias_start[1], CMOT_B_bias_end[1], CMOT_duration*ms, samplerate=sample_rate, units='A')
+    z_shim.customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_B_bias_start[2], CMOT_B_bias_end[2], CMOT_duration*ms, samplerate=sample_rate, units='A')      
+# Lasers
+    Cooling.frequency.customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_cooling_freq_start*MHz, CMOT_cooling_freq_end*MHz, CMOT_duration*ms, samplerate=sample_rate) 
+    Cooling_int.constant(t, CMOT_cooling_int, units="Vs") 
+    Repump_int.constant(t, CMOT_repump_int, units="Vs") 
+    return t + CMOT_duration*ms
+
+
+def molasses(t):
+# Coils
+    exec(MOT_quad_ch + "_enable.go_low(t)")
+    set_bias(t, np.array([B_zero_x,B_zero_y,B_zero_z])) 
+# Lasers
+    sample_rate=1/(0.2*ms)
+    Cooling.frequency.customramp(t, molasses_duration*ms-molasses_cooling_lock_time*ms, LineRamp, molasses_cooling_freq_start*MHz, molasses_cooling_freq_end*MHz, samplerate=sample_rate) 
+    Cooling_int.constant(t, molasses_cooling_int, units="Vs")
+    Repump_int.customramp(t, molasses_duration*ms, LineRamp, molasses_repump_int_start, molasses_repump_int_end, samplerate=sample_rate, units="Vs")
+    return t + molasses_duration*ms
+
+def Opt_Pump(t):
+# Coils 
+    set_bias(t-0.5*ms, np.array([OptPump_B_bias_x,OptPump_B_bias_y,OptPump_B_bias_z]))
+ 
+# Lasers
+    Cooling_AOM.go_low(t-OptPump_cooling_lock_time*ms) # Cooling light is turned off in advance. At the end of molasses, only repump is on for ~2ms.
+    Cooling_int.constant(t, 0, units="Vs")
+    Cooling.setfreq(t-OptPump_cooling_lock_time*ms, OptPump_cooling_freq*MHz)
+    
+    OptPump_shutter.open(t-5*ms) # minimum exposure 5ms of SR475
+    OptPump_AOM.go_high(t)
+    OptPump_int.constant(t, OptPump_OptPump_int, units="Vs")  
+    Repump_int.constant(t, OptPump_repump_int, units="Vs")
+    
+    OptPump_AOM.go_low(t+OptPump_duration*ms)
+    OptPump_int.constant(t+OptPump_duration*ms, 0, units="Vs")
+    Repump_AOM.go_low(t+OptPump_duration*ms)
+    Repump_int.constant(t+OptPump_duration*ms, 0, units="Vs")
+    
+    return t + OptPump_duration*ms
+
+def MOT_cell_quad_trap(t):
+    # add 10 ms here because of optical pumping.
+    # TTL/analog of OptPump and Repump are turned off at the end of optical pumping stage.
+    Cooling_shutter.close(t+10*ms)
+    Repump_shutter.close(t+10*ms)  
+    Probe_shutter.close(t+10*ms)
+    OptPump_shutter.close(t+10*ms) 
+    
+    exec(MOT_quad_ch + "_enable.go_high(t-0.1*ms)")
+    exec(MOT_quad_ch + ".constant(t-0.2*ms, quad_trap_quad_curr_start, units='A')")     
+    
+    # Move the atoms to the desired position
+    sample_rate=1/(0.2*ms)
+    quad_trap_B_bias_middle = np.array([quad_trap_B_bias_middle_x,quad_trap_B_bias_middle_y,quad_trap_B_bias_middle_z])
+    x_shim.customramp(t+quad_trap_B_bias_delay*2*us, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[0], quad_trap_B_bias_middle[0], samplerate=sample_rate, units='A') 
+    y_shim.customramp(t+quad_trap_B_bias_delay*2*us, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[1], quad_trap_B_bias_middle[1], samplerate=sample_rate, units='A')
+    z_shim.customramp(t+quad_trap_B_bias_delay*2*us, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[2], quad_trap_B_bias_middle[2], samplerate=sample_rate, units='A')
+    
+    # Compress the trap
+    sample_rate=1/(0.5*ms)   
+    exec(MOT_quad_ch + ".customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_quad_ramp_duration*ms, LineRamp, quad_trap_quad_curr_start, quad_trap_quad_curr_end, samplerate=sample_rate, units='A')")       
+
+    sample_rate=1/(0.2*ms)
+    quad_trap_B_bias_end = np.array([quad_trap_B_bias_end_x,quad_trap_B_bias_end_y,quad_trap_B_bias_end_z])
+    x_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms+quad_trap_B_bias_delay*us, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[0], quad_trap_B_bias_end[0], samplerate=sample_rate, units='A')  
+    y_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms+quad_trap_B_bias_delay*us, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[1], quad_trap_B_bias_end[1], samplerate=sample_rate, units='A')
+    z_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms+quad_trap_B_bias_delay*us, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[2], quad_trap_B_bias_end[2], samplerate=sample_rate, units='A')
+    
+    return t + quad_trap_quad_ramp_start_delay*ms + quad_trap_quad_ramp_duration*ms + quad_trap_hold_time*ms
+#)
+
+'''
+
+Imaging
+
+'''    
+#(
 def Imaging_prep(t):
    
     # Coils
-    coil_ch1.constant(t, -10, units="A") 
-    coil_ch2.constant(t, -10, units="A")
-    coil_ch3.constant(t, -10, units="A")
-    coil_ch4.constant(t, -10, units="A")
-    coil_ch1_enable.go_low(t)
-    coil_ch2_enable.go_low(t)
-    coil_ch3_enable.go_low(t)
-    coil_ch4_enable.go_low(t)
+    All_coil_off(t)
     
     # Lasers
     Probe_AOM.go_low(t)
@@ -110,55 +191,30 @@ def Imaging_prep(t):
     OptPump_AOM.go_low(t)
     OptPump_int.constant(t, 0, units="Vs") 
     
-    # Others
-    UV.go_low(t)
-    
+    # Others    
     evap_switch.go_low(t)
     evap_int.constant(t, 0)
     return t
-    
-def Fluo_image(t, duration, frametype):
+
+def Fluo_image(t, duration, frametype, shutter_turn_on):
     set_bias(t-TOF, np.array([0,0,0]))
     
-    Cooling.setfreq(t-MOT_cooling_lock_time, Fluo_cooling_freq)
+    Cooling.setfreq(t-MOT_cooling_lock_time*ms, Fluo_cooling_freq*MHz)
     Cooling_AOM.go_high(t)
     Cooling_int.constant(t, MOT_cooling_int)
-    Cooling_shutter.go_high(t-MOT_cooling_lock_time*1)
     
-    Repump.setfreq(t, MOT_repump_freq)
+    Repump.setfreq(t, MOT_repump_freq*MHz)
     Repump_AOM.go_high(t)
     Repump_int.constant(t, MOT_repump_int)
-    Repump_shutter.go_high(t-MOT_cooling_lock_time*1)
     
-    MOT_YZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=duration+0.01*ms, frametype=frametype)
-    return t+duration
-
-  
+    if shutter_turn_on:
+        Cooling_shutter.go_high(t-MOT_cooling_lock_time*ms)
+        Repump_shutter.go_high(t-MOT_cooling_lock_time*ms)
     
-# def subDoppler(t, duration, freq_c_s, freq_c_e, B_bias):
-    # t1_enable.go_low(t)
-    # self.set_bias(t, B_bias) # IBS: should be optimized (critical) done
-    # Cooling.frequency.customramp(t, duration-opt_adv, LineRamp, freq_c_s, freq_c_e, samplerate=1/mol_freq_step) # IBS: timing code is future bug. 
-    # Cool_int.constant(t, mol_cool_int)
-    # # Repump_int.constant(start, mol_rep_int_end)
-    # Repump_int.customramp(t, duration, LineRamp, mol_rep_int_start, mol_rep_int_end, samplerate=1/mol_freq_step)
-    # return t + duration
-
-# def opt_pump(t, duration):
-    # Shutter_Opt_pumping.open(t) # Note: this is due to the minimum exposure 5ms of SR475, move to PG cooling.
-    # Cooling_AOM.go_low(t-opt_adv)
-    # Cool_int.constant(t, cool_z)
-    # set_freq(Cooling, t-opt_adv, res+opt_f*MHz)
-    # # IAN: Repump power matters here
-    # OptPump_AOM.go_high(t)
-    # OptPump_AOM.go_low(t+duration)
-    # OptPump_int.constant(t, OptPumpint)
-    # OptPump_int.constant(t+duration, opt_z)
-    # Repump_int.constant(t, opt_rep_int)
-    # Repump_AOM.go_low(t+duration)
-    # Repump_int.constant(t+duration, rep_z)
-    # self.set_bias(t-0.5*ms, np.array(B_bias_optpump)) # IAN: How fast does bias actually change? (Field)
-    # return t+duration
+    MOT_YZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=duration*ms+0.01*ms, frametype=frametype)
+    return t+duration*ms
+#)
+ 
 
 if __name__ == '__main__':
 	start()
