@@ -438,8 +438,8 @@ class MOT:
         for ch in [0,2,3]:
             self.t_I[ch,:] = transport.currents_for_channel(self.t_t, duration, ch+1, ratio=-1/40*curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
         self.t_I[1,:] = transport.currents_for_channel(self.t_t, duration, 1+1, ratio=-1/40*10/3*curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
-        self.t_I[4,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5, B_bias=B_bias_start[0]) 
-        self.t_I[5,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5*bias_ratio_yx, B_bias=B_bias_start[1])
+        # self.t_I[4,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5, B_bias=B_bias_start[0]) 
+        # self.t_I[5,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5*bias_ratio_yx, B_bias=B_bias_start[1])
         transport_currents_interp = [interp1d(
             self.t_t, self.t_I[ch,:], 'cubic', fill_value='extrapolate'
         ) for ch in range(6)]
@@ -535,7 +535,7 @@ if __name__ == '__main__':
 
     New_MOT = MOT(t, cooling_freq=cent, repump_freq=repump_freq, quad_curr=quad) #82.231 1->1' 84.688 1->2'
     t += 1e-3
-    exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
+    # exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
     t += 30e-3
     # t += New_MOT.probe_fluo(t, probe_fluo_time, 'bg') # fluo imaging
     t += 30e-3
@@ -547,13 +547,13 @@ if __name__ == '__main__':
     t = New_MOT.load(t, load_time, B_bias_MOT, UV_onoff=True)
     # MOT_YZ_flea.expose(t-10*ms,'MOT_fluo_img', trigger_duration=0.1*ms, frametype='fluo_img')
     # t = New_MOT.move(t, dur_MOT_move, np.array(B_bias_MOT), np.array(B_bias_move))
-    t = New_MOT.compress(t, CMOT_dur, quad, compressed_MOT_quad, res+compress_freq_start*MHz, res+compress_freq_end*MHz, np.array(B_bias_move), np.array(B_bias_com)) # CMOT
+    #t = New_MOT.compress(t, CMOT_dur, quad, compressed_MOT_quad, res+compress_freq_start*MHz, res+compress_freq_end*MHz, np.array(B_bias_move), np.array(B_bias_com)) # CMOT
 
 
-    t = New_MOT.pol_grad(t, dur_mol, molasses_freq_start, molasses_freq_end, np.array(B_bias_mol)) # Molasses
+    #t = New_MOT.pol_grad(t, dur_mol, molasses_freq_start, molasses_freq_end, np.array(B_bias_mol)) # Molasses
     # # t = New_MOT.depump(t,4*ms) 
-    t=New_MOT.opt_pump(t, duration=dur_OptPumping*ms)
-    t = New_MOT.mag_trap(t, duration=dur_magtrap*ms, quad_start=quad_trap, B_bias_start=np.array(B_bias_capture_quad), B_bias_final= np.array(B_bias_final_quad))
+    #t=New_MOT.opt_pump(t, duration=dur_OptPumping*ms)
+    #t = New_MOT.mag_trap(t, duration=dur_magtrap*ms, quad_start=quad_trap, B_bias_start=np.array(B_bias_capture_quad), B_bias_final= np.array(B_bias_final_quad))
     
     
     # # t = New_MOT.move(t, dur_tran_bias*ms, np.array(B_bias_final_quad), np.array(B_bias_tran))
@@ -575,7 +575,7 @@ if __name__ == '__main__':
     
     t+=0.3
     t = New_MOT.probe_fluo(t, probe_fluo_time, 'bg')
-    # New_MOT.fluorescence(0,t)
+    New_MOT.fluorescence(0,t)
     
     New_MOT.__init__(t, cooling_freq=cent, repump_freq=repump_freq, quad_curr=quad)
     # UV.go_high(t)

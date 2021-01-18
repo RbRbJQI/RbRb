@@ -30,35 +30,6 @@ def All_coil_off(t):
     coil_ch3_enable.go_low(t)
     coil_ch4_enable.go_low(t)
 
-def MOT_quad_on(t):
-    coil_ch1_enable.go_high(t)
-def inner_coil_2_on(t):
-    coil_ch1_enable.go_high(t)
-def inner_coil_4_on(t):
-    coil_ch1_enable.go_high(t) 
-
-
-def outer_coil_1_on(t):
-    coil_ch2_enable.go_high(t)
-def outer_coil_3_on(t):
-    coil_ch2_enable.go_high(t)
-
-
-def inner_coil_1_on(t):
-    coil_ch3_enable.go_high(t) 
-def inner_coil_3_on(t):
-    coil_ch3_enable.go_high(t) 
-def outer_coil_5_on(t):
-    coil_ch3_enable.go_high(t)
-   
-
-def outer_coil_2_on(t):
-    coil_ch4_enable.go_high(t) 
-def outer_coil_4_on(t):
-    coil_ch4_enable.go_high(t) 
-def science_quad_on(t):
-    coil_ch4_enable.go_high(t)  
-
     
 def MOT_quad_select(t):
     ch1_0.go_low(t)
