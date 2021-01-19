@@ -438,13 +438,14 @@ class MOT:
         for ch in [0,2,3]:
             self.t_I[ch,:] = transport.currents_for_channel(self.t_t, duration, ch+1, ratio=-1/40*curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
         self.t_I[1,:] = transport.currents_for_channel(self.t_t, duration, 1+1, ratio=-1/40*10/3*curr_ratio[ch], B_bias=B_bias_start, I_coils=I_coils)
-        # self.t_I[4,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5, B_bias=B_bias_start[0]) 
-        # self.t_I[5,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5*bias_ratio_yx, B_bias=B_bias_start[1])
+        self.t_I[4,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5, B_bias=B_bias_start[0]) 
+        self.t_I[5,:] = transport.currents_for_channel(self.t_t, duration, 4+1, ratio=-0.5*bias_ratio_yx, B_bias=B_bias_start[1])
         transport_currents_interp = [interp1d(
             self.t_t, self.t_I[ch,:], 'cubic', fill_value='extrapolate'
         ) for ch in range(6)]
         
         coil_sw_list = ['','00','00','00','00','10','10','10','10','01','01','01']
+        
         switch = [current_switch([],[],[],[],[],[]) for ch in range(4)]
         for coil in range(1,len(I_coils)):
             coil_dur = self.t_t[np.argwhere(I_coils[coil]>0)]
@@ -535,7 +536,7 @@ if __name__ == '__main__':
 
     New_MOT = MOT(t, cooling_freq=cent, repump_freq=repump_freq, quad_curr=quad) #82.231 1->1' 84.688 1->2'
     t += 1e-3
-    # exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
+    exec("New_MOT.probe_"+probe_direction+"(t, probe_"+probe_direction+"_time, 'bg')")#exec for abs imaging
     t += 30e-3
     # t += New_MOT.probe_fluo(t, probe_fluo_time, 'bg') # fluo imaging
     t += 30e-3
@@ -564,10 +565,10 @@ if __name__ == '__main__':
     
     New_MOT.deload(t)
     t += t_of_f
-    New_MOT.probe_fluo(t, probe_fluo_time, 'fluo_img')
-    #exec("New_MOT.probe_"+str(probe_direction)+"(t, probe_"+probe_direction+"_time, 'atom')")
+    # New_MOT.probe_fluo(t, probe_fluo_time, 'fluo_img')
+    exec("New_MOT.probe_"+str(probe_direction)+"(t, probe_"+probe_direction+"_time, 'atom')")
     t += 0.2
-    #exec("New_MOT.probe_"+str(probe_direction)+"(t, probe_"+probe_direction+"_time, 'probe')")
+    exec("New_MOT.probe_"+str(probe_direction)+"(t, probe_"+probe_direction+"_time, 'probe')")
     
     
     

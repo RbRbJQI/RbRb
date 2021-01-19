@@ -111,6 +111,7 @@ def CMOT(t):
 def molasses(t):
 # Coils
     exec(MOT_quad_ch + "_enable.go_low(t)")
+    exec(MOT_quad_ch + ".constant(t, -10, units='A')")
     set_bias(t, np.array([B_zero_x,B_zero_y,B_zero_z])) 
 # Lasers
     sample_rate=1/(0.2*ms)
@@ -181,6 +182,18 @@ def MOT_cell_quad_trap(t):
     z_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[2], quad_trap_B_bias_end[2], samplerate=sample_rate, units='A')
     
     return t + quad_trap_quad_ramp_start_delay*ms + quad_trap_quad_ramp_duration*ms + quad_trap_hold_time*ms
+    
+# def evap(t):
+    # evap_switch.go_high(t)
+    # evap_int.constant(t, evap_int_saturation) 
+    # evap_rf.setamp(t, evap_rf_amp) 
+    
+    # evap_rf.frequency.customramp(t, evap_duration, LineRamp, evap_rf_freq_start*MHz, evap_rf_freq_end*MHz, samplerate = 1/(evap_step_size*ms))
+    
+    # evap_switch.go_low(t+evap_duration)
+    # evap_int.constant(t+evap_duration, 0)
+    # evap_rf.setamp(t+evap_duration, 0)
+    # return t
 #)
 
 '''

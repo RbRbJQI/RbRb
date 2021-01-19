@@ -288,7 +288,7 @@ class Transport(object):
         final_switch_y_frac=0.75,
         d2beta_final_dy2_1=0.15 / cm ** 2,
         d2beta_final_dy2_0=0 / cm ** 2,
-        dbeta_beginning_dy_0=0 / cm ** 2,
+        # dbeta_beginning_dy_0=0 / cm ** 2,
         channels={
             1: ['MOT', 'inner_1', 'inner_3'],
             2: ['outer_0', 'outer_2'],
@@ -555,7 +555,7 @@ class Transport(object):
         return I
 
     @lru_cache()
-    def currents_for_channel(self, t, duration, channel, ratio, B_bias, base = 0, I_coils="x"):
+    def currents_for_channel(self, t, duration, channel, ratio, B_bias = 0, base = 0, I_coils="x"):
         # if channel<=4:
             # r = -1/40
         # else: r = 0.5

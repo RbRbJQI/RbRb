@@ -45,10 +45,10 @@ coils = make_coils(
 # (move_v_rel_3, move_v_rel_5)=(0.83, 0.83)
 if __name__ == '__main__':
     import_or_reload('labscriptlib.RbRb.connection_table')
-    transport_time = dur_transport
+    transport_time = transport_duration
 else:
     # print(dur_transport)
-    transport_time = dur_transport
+    transport_time = transport_duration
 
 transport_trajectory = piecewise_minjerk_and_coast(
     0,
@@ -126,7 +126,7 @@ transport = Transport(
     final_switch_y_frac=final_switch_y_frac,
     d2beta_final_dy2_1=d2beta_final_dy2_1,
     d2beta_final_dy2_0=d2beta_final_dy2_0,
-    dbeta_beginning_dy_0 = dbeta_beginning_dy_0
+    # dbeta_beginning_dy_0 = dbeta_beginning_dy_0
 )
 
 if __name__ == '__main__':

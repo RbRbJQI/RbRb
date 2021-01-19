@@ -96,7 +96,7 @@ AnalogOut(name='Dipole_Power_2_int', parent_device=ni_pcie_6738, connection='ao9
 
 DEV 5
 
-Transport
+Coils
 
 '''
 

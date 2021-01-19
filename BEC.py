@@ -2,8 +2,14 @@ from labscript import *
 from labscriptlib.common.utils import Limits
 from labscriptlib.common.functions import *
 from labscript_utils import import_or_reload
+
+import_or_reload('labscriptlib.RbRb.BEC_functions') # to make sure the globals in runmanager are reloaded
 from labscriptlib.RbRb.BEC_functions import *
-import sys
+
+import_or_reload('labscriptlib.RbRb.transport_functions') # to make sure the globals in runmanager are reloaded
+from labscriptlib.RbRb.transport_functions import *
+
+import sys # to print warning messages
 
 import_or_reload('labscriptlib.RbRb.connection_table')
 
@@ -45,7 +51,7 @@ t += 0.091
 
 t = MOT_load(t)
 
-if Do_MOT_quad_trap:
+if Do_MOT_quad_trap or Do_transport:
     t = CMOT(t)
     print('t='+str(t)+', CMOT done!')
     t = molasses(t)
@@ -57,6 +63,10 @@ if Do_MOT_quad_trap:
     shutter_turn_on = True
 else:
     shutter_turn_on = False
+
+if Do_transport:
+    t = Bidirectional_transport(t)
+    t = Bidirectional_transport(t, inverse=True)
 
 t = Imaging_prep(t)
 

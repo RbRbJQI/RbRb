@@ -15,7 +15,7 @@ Remember to update the globals if channels are changed!
 
 # From MOT to science cell, coil number increases, e.g., outer_coil_1 is closest to the MOT cell.
 #                          00                 10            01           11
-# coil group 1 includes:  MOT_quad       inner_coil_2   inner_coil_4
+# coil group 1 includes:  MOT_quad       inner_coil_2   inner_coil_4   
 # coil group 2 includes:  outer_coil_1   outer_coil_3
 # coil_group 3 includes:  inner_coil_1   inner_coil_3   outer_coil_5
 # coil_group 4 includes:  outer_coil_2   outer_coil_4   science_quad
