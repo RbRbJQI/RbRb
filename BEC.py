@@ -65,7 +65,6 @@ print('t='+str(t)+', TOF done!')
 
 Fluo_image(t, 'fluo_img', shutter_turn_on=shutter_turn_on)
 
-fluorescence(0,t)
 t += 0.5
 
 Fluo_image(t, 'bg') # By default, shutters do not open in this function

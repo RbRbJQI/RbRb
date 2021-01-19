@@ -114,7 +114,7 @@ def molasses(t):
     set_bias(t, np.array([B_zero_x,B_zero_y,B_zero_z])) 
 # Lasers
     sample_rate=1/(0.2*ms)
-    Cooling.frequency.customramp(t, molasses_duration*ms-cooling_lock_time*ms, LineRamp, molasses_cooling_freq_start*MHz, molasses_cooling_freq_end*MHz, samplerate=sample_rate) 
+    Cooling.frequency.customramp(t, molasses_duration*ms-molasses_cooling_lock_time*ms, LineRamp, molasses_cooling_freq_start*MHz, molasses_cooling_freq_end*MHz, samplerate=sample_rate) 
     Cooling_int.constant(t, molasses_cooling_int, units="Vs")
     Repump_int.customramp(t, molasses_duration*ms, LineRamp, molasses_repump_int_start, molasses_repump_int_end, samplerate=sample_rate, units="Vs")
     return t + molasses_duration*ms
@@ -125,9 +125,9 @@ def Opt_Pump(t):
  
 # Lasers
     # Cooling light is turned off in advance. At the end of molasses, only repump is on when B bias starts to change or the cooling laser freq starts to change. The time scale is ~2ms.
-    Cooling_AOM.go_low(t-max(B_bias_respond_time*ms,cooling_lock_time*ms)) 
+    Cooling_AOM.go_low(t-max(B_bias_respond_time*ms,OptPump_cooling_lock_time*ms)) 
     Cooling_int.constant(t, 0, units="Vs")
-    Cooling.setfreq(t-cooling_lock_time*ms, OptPump_cooling_freq*MHz)
+    Cooling.setfreq(t-OptPump_cooling_lock_time*ms, OptPump_cooling_freq*MHz)
     
     OptPump_shutter.open(t-5*ms) # minimum exposure 5ms of SR475
     OptPump_AOM.go_high(t)
@@ -219,40 +219,28 @@ def Imaging_prep(t):
     return t
 
 def Fluo_image(t, frametype, shutter_turn_on=False):
-    if not frametype=='bg':
+    if not frametype=='bg':       
         # Pass dynamic globals
         FluoImage_cooling_int = MOT_cooling_int
         FluoImage_repump_int = MOT_repump_int
         FluoImage_repump_freq = MOT_repump_freq
-        
+
         Cooling.setfreq(t-cooling_lock_time*ms, FluoImage_cooling_freq*MHz)
         Cooling_AOM.go_high(t)
         Cooling_int.constant(t, FluoImage_cooling_int, units="Vs")
-        
+
         Repump.setfreq(t, FluoImage_repump_freq*MHz)
         Repump_AOM.go_high(t)
-        Repump_int.constant(t, FluoImage_repump_int, units="Vs")
-        
+        Repump_int.constant(t, FluoImage_repump_int, units="Vs")      
+ 
         if shutter_turn_on:
-            Cooling_shutter.go_high(t-cooling_lock_time*ms)
-            Repump_shutter.go_high(t-cooling_lock_time*ms)
+            Cooling_shutter.open(t)
+            Repump_shutter.open(t)
         
     MOT_YZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=FluoImage_duration*ms+0.01*ms, frametype=frametype)
     return t+FluoImage_duration*ms
 #)
 
-def fluorescence(start, end):
-    testin0.acquire('curr0', start, end)
-    testin1.acquire('curr1', start, end)
-    testin2.acquire('curr2', start, end)    
-    testin3.acquire('curr3', start, end)    
-    testin4.acquire('fluo', start, end)
-    testin5.acquire('biasx', start, end)
-    testin6.acquire('biasy', start, end)
-    Repump_monitor.acquire('Repump_monitor', start, end)
-    Cooling_monitor.acquire('Cooling_monitor', start, end)
-    # testin0_table.acquire('B_sensor', start, end)
-    return 'Collected as fluo'
     
 if __name__ == '__main__':
 	start()
