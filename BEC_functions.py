@@ -3,7 +3,6 @@ from labscriptlib.common.utils import Limits
 from labscriptlib.common.functions import *
 from labscript_utils import import_or_reload
 sys.path.append(r'C:\Users\RbRb\labscript-suite\userlib\labscriptlib\RbRb')
-from coil_config import *
 
 MHz = 1e6
 us = 1e-6
@@ -18,6 +17,46 @@ def set_bias(start, B_bias):
     x_shim.constant(start, B_bias[0], units='A')
     y_shim.constant(start, B_bias[1], units='A')
     z_shim.constant(start, B_bias[2], units='A')
+#)
+
+'''
+Coil configuration functions
+'''
+#(
+# From MOT to science cell, coil number increases, e.g., outer_coil_1 is closest to the MOT cell.
+#                          00                 10            01           11
+# coil group 1 includes:  MOT_quad       inner_coil_2   inner_coil_4   
+# coil group 2 includes:  outer_coil_1   outer_coil_3
+# coil_group 3 includes:  inner_coil_1   inner_coil_3   outer_coil_5
+# coil_group 4 includes:  outer_coil_2   outer_coil_4   science_quad
+
+def All_coil_off(t):
+    coil_ch0.constant(t, -10, units="A") 
+    coil_ch1.constant(t, -10, units="A")
+    coil_ch2.constant(t, -10, units="A")
+    coil_ch3.constant(t, -10, units="A")
+    coil_ch0_enable.go_low(t)
+    coil_ch1_enable.go_low(t)
+    coil_ch2_enable.go_low(t)
+    coil_ch3_enable.go_low(t)
+
+def MOT_quad_select(t):
+    coil_ch0_0.go_low(t)
+    coil_ch0_1.go_low(t)  
+    
+def outer_coil_1_select(t):
+    coil_ch1_0.go_low(t)
+    coil_ch1_1.go_low(t)
+
+def inner_coil_1_select(t):
+    coil_ch2_0.go_low(t)
+    coil_ch2_1.go_low(t)
+
+def outer_coil_2_select(t):
+    coil_ch3_0.go_low(t)
+    coil_ch3_1.go_low(t)
+
+MOT_quad_ch = 'coil_ch1'
 #)
 '''
 
@@ -252,6 +291,19 @@ def Fluo_image(t, frametype, shutter_turn_on=False):
         
     MOT_YZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=FluoImage_duration*ms+0.01*ms, frametype=frametype)
     return t+FluoImage_duration*ms
+
+def fluorescence(start, end):
+    testin0.acquire('curr0', start, end)
+    testin1.acquire('curr1', start, end)
+    testin2.acquire('curr2', start, end)    
+    testin3.acquire('curr3', start, end)    
+    testin4.acquire('fluo', start, end)
+    testin5.acquire('biasx', start, end)
+    testin6.acquire('biasy', start, end)
+    Repump_monitor.acquire('Repump_monitor', start, end)
+    Cooling_monitor.acquire('Cooling_monitor', start, end)
+    # testin0_table.acquire('B_sensor', start, end)
+    return 'Collected as fluo'
 #)
 
     

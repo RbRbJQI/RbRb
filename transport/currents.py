@@ -555,11 +555,11 @@ class Transport(object):
         return I
 
     @lru_cache()
-    def currents_for_channel(self, t, duration, channel, ratio, B_bias = 0, base = 0, I_coils="x"):
+    def currents_for_channel(self, t, duration, channel, ratio, B_bias = 0, base = 0, I_coils=[]):
         # if channel<=4:
             # r = -1/40
         # else: r = 0.5
-        if I_coils[0]=='x':
+        if I_coils[0]==[]:
             I = self.currents_at_time(t)*ratio
         else:
             I = I_coils*ratio

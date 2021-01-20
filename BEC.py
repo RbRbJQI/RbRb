@@ -68,6 +68,8 @@ if Do_transport:
     t = Bidirectional_transport(t)
     t = Bidirectional_transport(t, inverse=True)
 
+fluorescence(0, t)
+
 t = Imaging_prep(t)
 
 t += TOF*ms
