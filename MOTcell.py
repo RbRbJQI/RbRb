@@ -520,7 +520,7 @@ if __name__ == '__main__':
     probe_yz_time = 0.008*ms
     probe_xy_time = 0.008*ms
     probe_science_time = 0.008*ms
-    probe_fluo_time = 1*ms
+    probe_fluo_time = 0.5*ms
 
     B_bias_mol = (0,0,B_bias_mol_z)#*np.array([B_bias_mol_x,B_bias_mol_y,B_bias_mol_z])
     B_bias_optpump = np.array([B_bias_optpump_x,B_bias_optpump_y,B_bias_optpump_z])

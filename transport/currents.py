@@ -559,7 +559,7 @@ class Transport(object):
         # if channel<=4:
             # r = -1/40
         # else: r = 0.5
-        if I_coils[0]==[]:
+        if I_coils==[]:
             I = self.currents_at_time(t)*ratio
         else:
             I = I_coils*ratio

@@ -56,7 +56,7 @@ def outer_coil_2_select(t):
     coil_ch3_0.go_low(t)
     coil_ch3_1.go_low(t)
 
-MOT_quad_ch = 'coil_ch1'
+MOT_quad_ch = 'coil_ch0'
 #)
 '''
 
