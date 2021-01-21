@@ -144,7 +144,7 @@ if __name__ == '__main__':
     figure('y')
 
     plot(tt, yy)
-    scatter(t_coils, y_coils)
+    # scatter(t_coils, y_coils)
     print(transport.t_coils)
     # figure('push')
     # plot(tt,cc[0 ])

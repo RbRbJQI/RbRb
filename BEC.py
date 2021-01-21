@@ -66,24 +66,33 @@ else:
 
 if Do_transport:
     t = Bidirectional_transport(t)
-    t = Bidirectional_transport(t, inverse=True)
+    if Do_inverse:
+        t = Bidirectional_transport(t, inverse=True)
 
-fluorescence(0, t)
+# fluorescence(0, t)
+fluorescence(t-transport_duration, t)
 
 t = Imaging_prep(t)
 
 t += TOF*ms
 print('t='+str(t)+', TOF done!')
 
-Fluo_image(t, 'fluo_img', shutter_turn_on=shutter_turn_on)
+if Do_AbsImage:
+    exec("probe_"+'yz'+"(t, probe_"+'yz'+"_time, 'atom')")
+    t += 0.2
+    exec("probe_"+'yz'+"(t, probe_"+'yz'+"_time, 'probe')")
+    t += 0.1
 
-t += 0.5
-
-Fluo_image(t, 'bg') # By default, shutters do not open in this function
+if Do_FluoImage:
+    Fluo_image(t, 'fluo_img', shutter_turn_on=shutter_turn_on)
+    t += 0.3
+    Fluo_image(t, 'bg') # By default, shutters do not open in this function
 print('t='+str(t)+', Experiment done!')
 
 Initial_State(t)
-
+if Do_AbsImage or Do_transportImage:
+    t += 0.1
+    exec("probe_"+'yz'+"(t, probe_"+'yz'+"_time, 'bg')")
 t += 1
 stop(t)
     

@@ -21,14 +21,15 @@ def set_bias(start, B_bias):
 
 '''
 Coil configuration functions
+This list is copied from current.py
 '''
 #(
 # From MOT to science cell, coil number increases, e.g., outer_coil_1 is closest to the MOT cell.
 #                          00                 10            01           11
-# coil group 1 includes:  MOT_quad       inner_coil_2   inner_coil_4   
-# coil group 2 includes:  outer_coil_1   outer_coil_3
-# coil_group 3 includes:  inner_coil_1   inner_coil_3   outer_coil_5
-# coil_group 4 includes:  outer_coil_2   outer_coil_4   science_quad
+# coil group 0 includes:  MOT_quad       inner_coil_2   inner_coil_4   
+# coil group 1 includes:  outer_coil_1   outer_coil_3                   
+# coil_group 2 includes:  inner_coil_1   inner_coil_3   outer_coil_5
+# coil_group 3 includes:  outer_coil_2   outer_coil_4   science_quad
 
 def All_coil_off(t):
     coil_ch0.constant(t, -10, units="A") 
@@ -291,6 +292,27 @@ def Fluo_image(t, frametype, shutter_turn_on=False):
         
     MOT_YZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=FluoImage_duration*ms+0.01*ms, frametype=frametype)
     return t+FluoImage_duration*ms
+
+def probe_yz(t, duration, frametype):
+    if not frametype=='bg':
+        do8.go_high(t)
+        Probe_int.constant(t, probe_MOT_int, units="Vs")
+        Probe_AOM.go_high(t)
+        Probe_AOM.go_low(t+duration)
+        Probe_int.constant(t+duration, 0, units="Vs")
+
+        Cooling.setfreq(t-cooling_lock_time*ms, AbsImage_cooling_freq*MHz) 
+        
+        # print(start)
+        Repump_AOM.go_high(t)
+        Repump_int.constant(t, 0.6+0.057, units="Vs") #0.6 before
+        # Repump_int.constant(start, -0.057)
+        # Repump_AOM.go_low(start)
+        # Repump_int.constant(start, rep_z)
+        # Shutter_Repump.open(start-prob_adv-10*ms)
+        
+        Probe_shutter.open(t-3*ms)
+    MOT_YZ_flea.expose(t-0.01*ms,'abs_img', trigger_duration=duration+0.01*ms, frametype=frametype) 
 
 def fluorescence(start, end):
     testin0.acquire('curr0', start, end)

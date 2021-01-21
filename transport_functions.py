@@ -23,10 +23,13 @@ class current_switch(object):
 def Bidirectional_transport(t, inverse=False):
     from scipy.interpolate import interp1d
     transport_time_list = np.arange(0, transport_duration, transport_step_size*ms)
-    I_coils = transport.currents_at_time(transport_time_list) # Only need the time list as imput. The sequence is pre-programmed.
+    collision_check = np.zeros(len(transport_time_list))
+    I_coils = transport.currents_at_time(transport_time_list) # Only need the time list as input. The sequence is pre-programmed.
 
     if inverse:
         I_coils = np.array([np.flip(I_coil) for I_coil in I_coils])
+    
+    if Do_transportImage:   probe_transport_in_progess(t, ind_probe_coils, I_coils)
     
     I_channels = np.zeros((tot_ch,len(transport_time_list)))
     curr_ratio=[curr_ratio_ch1, curr_ratio_ch2, curr_ratio_ch3, curr_ratio_ch4]
@@ -38,14 +41,48 @@ def Bidirectional_transport(t, inverse=False):
     '''
     coil_order_in_I_coils = ['push_coil', 'MOT_quad', 'outer_coil_1', 'inner_coil_1', 'outer_coil_2', 'inner_coil_2', 
                             'outer_coil_3', 'inner_coil_3', 'outer_coil_4', 'inner_coil_4', 'outer_coil_5', 'science_quad']
+    
+    This list is copied from current.py
     '''
-    channel_order_in_I_coils = [4, 0, 1, 2, 3, 0, 
+    if not Do_transport_shim_coil: # No transport shim coil
+        channel_order_in_I_coils = [4, 0, 1, 2, 3, 0, 
                                 1, 2, 3, 0, 2, 3]
-    ch0_order_in_I_coils = ['', 'off', 'off', 'off', 'off', 'on', 
+        ch0_order_in_I_coils = ['', 'off', 'off', 'off', 'off', 'on', 
                                 'on', 'on', 'on', 'off', 'off', 'off']
-    ch1_order_in_I_coils = ['', 'off', 'off', 'off', 'off', 'off', 
+        ch1_order_in_I_coils = ['', 'off', 'off', 'off', 'off', 'off', 
                                 'off', 'off', 'off', 'on', 'on', 'on']
-                                
+    else: # Add transport shim coils
+        channel_order_in_I_coils = [4, 0, 1, 2, 3, 0, 
+                                    1, 2, 3, 0, 2, 3, 
+                                    0, 1] #shims
+        ch0_order_in_I_coils = ['', 'off', 'off', 'off', 'off', 'on', 
+                                    'on', 'on', 'on', 'off', 'off', 'off',
+                                    'on', 'on'] #shims
+        ch1_order_in_I_coils = ['', 'off', 'off', 'off', 'off', 'off', 
+                                    'off', 'off', 'off', 'on', 'on', 'on', 
+                                    'on', 'on'] #shims
+                                     
+        num_shim = len(channel_order_in_I_coils) - 12
+        I_coils_shim = np.zeros((num_shim, len(I_coils[0])))
+        for shim_ind in range(num_shim):
+            start, end = eval( 'transport_shim'+str(shim_ind)+'_start*len(I_coils[0])' ), eval( 'transport_shim'+str(shim_ind)+'_end*len(I_coils[0])' )
+            transport_shim_curr  = eval('transport_shim'+str(shim_ind)+'_curr')
+            I_coils_shim[shim_ind, round(start):round(end)] = transport_shim_curr
+            ramp_dur = transport_shim_ramp_dur
+            # #ramp up
+            # start_ramp, end_ramp = start, start+int(ramp_dur*len(I_coils[0]))
+            # t_ramp = np.arange(0, end_ramp-start_ramp)
+            # I_coils_shim[shim_ind, round(start_ramp):round(end_ramp)] = t_ramp/(end_ramp-start_ramp)* transport_shim_curr
+            # #ramp down
+            # start_ramp, end_ramp = end-int(ramp_dur*len(I_coils[0])), end
+            # t_ramp = np.arange(0, end_ramp-start_ramp)
+            # I_coils_shim[shim_ind, round(start_ramp):round(end_ramp)] = transport_shim_curr* (1-t_ramp/(end_ramp-start_ramp))
+            if inverse:
+                I_coils_shim[shim_ind] = np.array(np.flip(I_coils_shim[shim_ind]))
+        I_coils = np.vstack((I_coils, I_coils_shim))
+        exec("I_channels["+str(channel_order_in_I_coils[-num_shim:])+",:] += I_coils_shim")
+        I_channels_interp = [interp1d(transport_time_list, I_channels[ch,:], 'cubic', fill_value='extrapolate') for ch in range(tot_ch)]
+        
     switch = [current_switch([],[],[],[],[],[]) for ch in range(tot_ch)]
     for coil in range(1,len(I_coils)):
         # Assuming:
@@ -78,4 +115,33 @@ def Bidirectional_transport(t, inverse=False):
         exec("coil_ch"+str(ch)+".customramp(t, transport_duration, transport_currents, I_channels_interp["+str(ch)+"], samplerate=sample_rate, units='A')") 
    
     return t + transport_duration
+      
+def probe_transport_in_progess(t, ind_probe_coils, I_coils):
+    transport_time_list = np.arange(0, transport_duration, transport_step_size*ms)
+    t_coil_probe = transport.t_coils[ind_probe_coils]-2*ms
+    # ch_coil_probe = Channel_n(ind_probe_coils)
+    if t_coil_probe<=transport_duration:
+        ind_t_coil_probe_start = round(t_coil_probe/transport_duration*len(transport_time_list))
+        ind_t_coil_probe_end = min( round((t_coil_probe+dur_probe_coils*ms)/transport_duration*len(transport_time_list)), round((t+transport_duration)/transport_duration*len(transport_time_list)))
+        # print(t_coil_probe, t_coil_probe+dur_probe_coils, len(self.t_I[0]))
+        curr_coil1 = I_coils[ind_probe_coils, ind_t_coil_probe_start]
+        curr_coil2 = I_coils[ind_probe_coils-1, ind_t_coil_probe_start]
+        curr_coil3 = I_coils[ind_probe_coils+1, ind_t_coil_probe_start]
+        # print(curr_coil1)
+        for coil in range(len(I_coils)):
+            I_coils[coil, ind_t_coil_probe_start:] = -0.01
+        I_coils[ind_probe_coils,ind_t_coil_probe_start:ind_t_coil_probe_end] = curr_coil1
+        I_coils[ind_probe_coils-1,ind_t_coil_probe_start:ind_t_coil_probe_end] = curr_coil2
+        I_coils[ind_probe_coils+1,ind_t_coil_probe_start:ind_t_coil_probe_end] = curr_coil3
+        # if t_coil_probe+dur_probe_coils > dur_transport:
+        coil_ch0_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
+        coil_ch1_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
+        coil_ch2_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
+        coil_ch3_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
+        from labscriptlib.RbRb.BEC_functions import probe_yz
+        # probe_yz(t+t_coil_probe+dur_probe_coils*ms+TOF*ms, probe_yz_time, 'atom')
+        exec("probe_"+'yz'+"(t+t_coil_probe+dur_probe_coils*ms+TOF*ms, probe_"+'yz'+"_time, 'atom')")
+        exec("probe_"+'yz'+"(t+t_coil_probe+dur_probe_coils*ms+TOF*ms+0.2, probe_"+'yz'+"_time, 'probe')")
+        # probe_yz(t+t_coil_probe+dur_probe_coils*ms+TOF*ms+0.2, probe_yz_time, 'probe')
         
+        # exec("New_MOT.probe_"+probe_direction+"(start+t_coil_probe+dur_probe_coils*ms+TOF*ms+0.2, probe_"+probe_direction+"_time, 'probe')")
