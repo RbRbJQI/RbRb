@@ -29,7 +29,7 @@ MOT_XY_flea_camera_attributes = {
    # 'CameraAttributes::ImageFormatControl::PixelFormat': 'Mono 16', # IBS change
 }
 
-MOT_YZ_flea_camera_attributes = {
+MOT_XZ_flea_camera_attributes = {
     'AcquisitionAttributes::VideoMode': '640 x 480 Mono 16 60.00 fps',
     # 'AcquisitionAttributes::PacketSize': 1500,
     'AcquisitionAttributes::Timeout': 5000,
@@ -95,10 +95,10 @@ PI_camera_attributes = {
 manual_mode_camera_attributes = MOT_XY_flea_camera_attributes.copy()
 manual_mode_camera_attributes['CameraAttributes::Trigger::TriggerMode'] = 'Mode3'
 IMAQdxCamera(name='MOT_XY_flea', parent_device=camera_trigger_MOT_XY_flea, connection='trigger', serial_number=0xB09D01009014EC, camera_attributes=MOT_XY_flea_camera_attributes, manual_mode_camera_attributes=manual_mode_camera_attributes, orientation='XY')
-manual_mode_camera_attributes = MOT_YZ_flea_camera_attributes.copy()
+manual_mode_camera_attributes = MOT_XZ_flea_camera_attributes.copy()
 
 manual_mode_camera_attributes['CameraAttributes::Trigger::TriggerMode'] = 'Mode3'
-IMAQdxCamera(name='MOT_YZ_flea', parent_device=camera_trigger_MOT_YZ_flea, connection='trigger', serial_number=0xB09D01009014EE, camera_attributes=MOT_YZ_flea_camera_attributes, manual_mode_camera_attributes=manual_mode_camera_attributes, orientation='YZ')
+IMAQdxCamera(name='MOT_XZ_flea', parent_device=camera_trigger_MOT_XZ_flea, connection='trigger', serial_number=0xB09D01009014EE, camera_attributes=MOT_XZ_flea_camera_attributes, manual_mode_camera_attributes=manual_mode_camera_attributes, orientation='XZ')
 
 manual_mode_camera_attributes = Science_flea_camera_attributes.copy()
 manual_mode_camera_attributes['CameraAttributes::Acquisition::Trigger::TriggerMode'] = 'Off'

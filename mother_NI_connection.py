@@ -55,8 +55,8 @@ DigitalOut(name='do9', parent_device=ni_usb_6229_table2, connection='port0/line9
 
 Shutter(name='Cooling_shutter', parent_device=ni_usb_6229_table2, connection='port0/line12', delay=(3*ms, 3*ms))
 Shutter(name='Repump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line15', delay=(6*ms, 3*ms))
-Shutter(name='OptPump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line14', delay=(2.1*ms, 3.3*ms))
-Shutter(name='Probe_shutter', parent_device=ni_usb_6229_table2, connection='port0/line13', delay=(3.3*ms, 3*ms))
+Shutter(name='OptPump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line14', delay=(6*ms, 3.3*ms)) # minimum exposure 5ms of SR475
+Shutter(name='Probe_shutter', parent_device=ni_usb_6229_table2, connection='port0/line13', delay=(6*ms, 3*ms))
 
 AnalogOut(name='quad_MOT2', parent_device=ni_usb_6229_table2, connection='ao0')
 AnalogOut(name='x_shim', parent_device=ni_usb_6229_table2, connection='ao1', unit_conversion_class=BidirectionalCoilDriver, unit_conversion_parameters={'slope':1.96, 'shift':-0.11*1.96})

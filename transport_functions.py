@@ -23,13 +23,13 @@ class current_switch(object):
 def Bidirectional_transport(t, inverse=False):
     from scipy.interpolate import interp1d
     transport_time_list = np.arange(0, transport_duration, transport_step_size*ms)
-    collision_check = np.zeros(len(transport_time_list))
     I_coils = transport.currents_at_time(transport_time_list) # Only need the time list as input. The sequence is pre-programmed.
 
     if inverse:
         I_coils = np.array([np.flip(I_coil) for I_coil in I_coils])
     
-    if Do_transportImage:   probe_transport_in_progess(t, ind_probe_coils, I_coils)
+    if Do_transportImage:   
+        probe_transport_in_progess(t, ind_probe_coils, I_coils)
     
     I_channels = np.zeros((tot_ch,len(transport_time_list)))
     curr_ratio=[curr_ratio_ch1, curr_ratio_ch2, curr_ratio_ch3, curr_ratio_ch4]
@@ -80,6 +80,9 @@ def Bidirectional_transport(t, inverse=False):
             if inverse:
                 I_coils_shim[shim_ind] = np.array(np.flip(I_coils_shim[shim_ind]))
         I_coils = np.vstack((I_coils, I_coils_shim))
+        collision_check = eval("I_channels["+str(channel_order_in_I_coils[-num_shim:])+",:]*I_coils_shim")
+        if np.sum(collision_check)!=0:
+            raise Exception('Transport coil current conflicts!')
         exec("I_channels["+str(channel_order_in_I_coils[-num_shim:])+",:] += I_coils_shim")
         I_channels_interp = [interp1d(transport_time_list, I_channels[ch,:], 'cubic', fill_value='extrapolate') for ch in range(tot_ch)]
         
@@ -90,9 +93,8 @@ def Bidirectional_transport(t, inverse=False):
             # 2. Each coil only turns on once
         coil_in_use_time_list = transport_time_list[np.argwhere(I_coils[coil]>0)] 
         if len(coil_in_use_time_list)>0:
-            start, end = coil_in_use_time_list[0][0], coil_in_use_time_list[-1][0] # This is a matrix of size N(time list) x 1
+            start = coil_in_use_time_list[0][0] # This is a matrix of size N(time list) x 1
             switch[channel_order_in_I_coils[coil]].time_te_on.append(start)
-            switch[channel_order_in_I_coils[coil]].time_te_off.append(end) # This channel enable off list is never used.
             exec("switch[channel_order_in_I_coils[coil]].time_t0_"+str(ch0_order_in_I_coils[coil])+".append(start)")
             exec("switch[channel_order_in_I_coils[coil]].time_t1_"+str(ch1_order_in_I_coils[coil])+".append(start)")
     
@@ -107,7 +109,9 @@ def Bidirectional_transport(t, inverse=False):
             exec("coil_ch"+str(ch)+"_1.go_low("+str(t+time)+")")
         for time in switch[ch].time_te_on:
             exec("coil_ch"+str(ch)+"_enable.go_high("+str(t+time)+")")
+        # Turning the channels off adds more spikes in the current, read from Hall monitor.
 
+            
     sample_rate=1/(transport_step_size*ms)
     def transport_currents(t, duration, I_channels_interp): # customramp requires the function to be in this specific format.
         return I_channels_interp(t)
@@ -117,31 +121,28 @@ def Bidirectional_transport(t, inverse=False):
     return t + transport_duration
       
 def probe_transport_in_progess(t, ind_probe_coils, I_coils):
+    probe_coil_duration = 0.5*ms
     transport_time_list = np.arange(0, transport_duration, transport_step_size*ms)
     t_coil_probe = transport.t_coils[ind_probe_coils]-2*ms
-    # ch_coil_probe = Channel_n(ind_probe_coils)
     if t_coil_probe<=transport_duration:
         ind_t_coil_probe_start = round(t_coil_probe/transport_duration*len(transport_time_list))
-        ind_t_coil_probe_end = min( round((t_coil_probe+dur_probe_coils*ms)/transport_duration*len(transport_time_list)), round((t+transport_duration)/transport_duration*len(transport_time_list)))
-        # print(t_coil_probe, t_coil_probe+dur_probe_coils, len(self.t_I[0]))
+        ind_t_coil_probe_end = min( round((t_coil_probe+probe_coil_duration)/transport_duration*len(transport_time_list)), round((t+transport_duration)/transport_duration*len(transport_time_list)))
+
         curr_coil1 = I_coils[ind_probe_coils, ind_t_coil_probe_start]
         curr_coil2 = I_coils[ind_probe_coils-1, ind_t_coil_probe_start]
         curr_coil3 = I_coils[ind_probe_coils+1, ind_t_coil_probe_start]
-        # print(curr_coil1)
+
         for coil in range(len(I_coils)):
             I_coils[coil, ind_t_coil_probe_start:] = -0.01
         I_coils[ind_probe_coils,ind_t_coil_probe_start:ind_t_coil_probe_end] = curr_coil1
         I_coils[ind_probe_coils-1,ind_t_coil_probe_start:ind_t_coil_probe_end] = curr_coil2
         I_coils[ind_probe_coils+1,ind_t_coil_probe_start:ind_t_coil_probe_end] = curr_coil3
-        # if t_coil_probe+dur_probe_coils > dur_transport:
-        coil_ch0_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
-        coil_ch1_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
-        coil_ch2_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
-        coil_ch3_enable.go_low(t+t_coil_probe+dur_probe_coils*ms)
-        from labscriptlib.RbRb.BEC_functions import probe_yz
-        # probe_yz(t+t_coil_probe+dur_probe_coils*ms+TOF*ms, probe_yz_time, 'atom')
-        exec("probe_"+'yz'+"(t+t_coil_probe+dur_probe_coils*ms+TOF*ms, probe_"+'yz'+"_time, 'atom')")
-        exec("probe_"+'yz'+"(t+t_coil_probe+dur_probe_coils*ms+TOF*ms+0.2, probe_"+'yz'+"_time, 'probe')")
-        # probe_yz(t+t_coil_probe+dur_probe_coils*ms+TOF*ms+0.2, probe_yz_time, 'probe')
+
+        coil_ch0_enable.go_low(t+t_coil_probe+probe_coil_duration)
+        coil_ch1_enable.go_low(t+t_coil_probe+probe_coil_duration)
+        coil_ch2_enable.go_low(t+t_coil_probe+probe_coil_duration)
+        coil_ch3_enable.go_low(t+t_coil_probe+probe_coil_duration)
         
-        # exec("New_MOT.probe_"+probe_direction+"(start+t_coil_probe+dur_probe_coils*ms+TOF*ms+0.2, probe_"+probe_direction+"_time, 'probe')")
+        from labscriptlib.RbRb.BEC_functions import probe_XZ
+        exec("probe_"+probe_direction+"(t+t_coil_probe+probe_coil_duration+TOF*ms, 'atom')")
+        exec("probe_"+probe_direction+"(t+t_coil_probe+probe_coil_duration+TOF*ms+0.2, 'probe')")

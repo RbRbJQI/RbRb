@@ -170,7 +170,7 @@ def Opt_Pump(t):
     Cooling_int.constant(t, 0, units="Vs")
     Cooling.setfreq(t-OptPump_cooling_lock_time*ms, OptPump_cooling_freq*MHz)
     
-    OptPump_shutter.open(t-5*ms) # minimum exposure 5ms of SR475
+    OptPump_shutter.open(t) 
     OptPump_AOM.go_high(t)
     OptPump_int.constant(t, OptPump_OptPump_int, units="Vs")  
     Repump_int.constant(t, OptPump_repump_int, units="Vs")
@@ -193,8 +193,8 @@ def MOT_cell_quad_trap(t):
     # Set cooling laser frequency for imaging
     if Do_FluoImage:
         Cooling.setfreq(t+10*ms, FluoImage_cooling_freq*MHz) 
-    elif Do_AbsImage:
-        Cooling.setfreq(t+10*ms, AbsImage_cooling_freq*MHz)  
+    elif Do_AbsImage or Do_transportImage:
+        exec("Cooling.setfreq(t+10*ms, probe_" + probe_direction + "_cooling_freq*MHz)")  
     
     # start turning on quad coils at the end of optical pumping
     exec(MOT_quad_ch + "_enable.go_high(t-0.1*ms)")
@@ -223,17 +223,17 @@ def MOT_cell_quad_trap(t):
     
     return t + quad_trap_quad_ramp_start_delay*ms + quad_trap_quad_ramp_duration*ms + quad_trap_hold_time*ms
     
-# def evap(t):
-    # evap_switch.go_high(t)
-    # evap_int.constant(t, evap_int_saturation) 
-    # evap_rf.setamp(t, evap_rf_amp) 
+def evap(t):
+    evap_switch.go_high(t)
+    evap_int.constant(t, evap_int_saturation) 
+    evap_rf.setamp(t, evap_rf_Novatech_amp) 
     
-    # evap_rf.frequency.customramp(t, evap_duration, LineRamp, evap_rf_freq_start*MHz, evap_rf_freq_end*MHz, samplerate = 1/(evap_step_size*ms))
+    evap_rf.frequency.customramp(t, evap_duration, LineRamp, evap_rf_freq_start*MHz, evap_rf_freq_end*MHz, samplerate = 1/(evap_step_size*ms))
     
-    # evap_switch.go_low(t+evap_duration)
-    # evap_int.constant(t+evap_duration, 0)
-    # evap_rf.setamp(t+evap_duration, 0)
-    # return t
+    evap_switch.go_low(t+evap_duration)
+    evap_int.constant(t+evap_duration, 0)
+    evap_rf.setamp(t+evap_duration, 0)
+    return t + evap_duration
 #)
 
 '''
@@ -250,8 +250,8 @@ def Imaging_prep(t):
         # Pass dynamic globals  
         B_zero = np.array([B_zero_x,B_zero_y,B_zero_z])
         set_bias(t, B_zero) 
-    elif Do_AbsImage:
-        set_bias(t, AbsImage_B_Bias)
+    elif Do_AbsImage or Do_transportImage:
+        exec("set_bias(t, probe_" + probe_direction + "_B_Bias)")
     
     # Lasers
     Probe_AOM.go_low(t)
@@ -266,9 +266,6 @@ def Imaging_prep(t):
     OptPump_AOM.go_low(t)
     OptPump_int.constant(t, 0, units="Vs") 
     
-    # Others    
-    evap_switch.go_low(t)
-    evap_int.constant(t, 0)
     return t
 
 def Fluo_image(t, frametype, shutter_turn_on=False):
@@ -290,31 +287,44 @@ def Fluo_image(t, frametype, shutter_turn_on=False):
             Cooling_shutter.open(t)
             Repump_shutter.open(t)
         
-    MOT_YZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=FluoImage_duration*ms+0.01*ms, frametype=frametype)
+    MOT_XZ_flea.expose(t-0.01*ms,'fluo_img', trigger_duration=FluoImage_duration*ms+0.01*ms, frametype=frametype)
     return t+FluoImage_duration*ms
 
-def probe_yz(t, duration, frametype):
+def probe_XZ(t, frametype):
     if not frametype=='bg':
-        do8.go_high(t)
-        Probe_int.constant(t, probe_MOT_int, units="Vs")
+        Cooling.setfreq(t-cooling_lock_time*ms, probe_XZ_cooling_freq*MHz)
+        Probe_int.constant(t, probe_XZ_int, units="Vs")
         Probe_AOM.go_high(t)
-        Probe_AOM.go_low(t+duration)
-        Probe_int.constant(t+duration, 0, units="Vs")
+        Probe_shutter.open(t)
 
-        Cooling.setfreq(t-cooling_lock_time*ms, AbsImage_cooling_freq*MHz) 
-        
-        # print(start)
         Repump_AOM.go_high(t)
-        Repump_int.constant(t, 0.6+0.057, units="Vs") #0.6 before
-        # Repump_int.constant(start, -0.057)
-        # Repump_AOM.go_low(start)
-        # Repump_int.constant(start, rep_z)
-        # Shutter_Repump.open(start-prob_adv-10*ms)
-        
-        Probe_shutter.open(t-3*ms)
-    MOT_YZ_flea.expose(t-0.01*ms,'abs_img', trigger_duration=duration+0.01*ms, frametype=frametype) 
+        Repump_int.constant(t, probe_XZ_repump_int, units="Vs")  
 
-def fluorescence(start, end):
+        Probe_AOM.go_low(t+probe_XZ_duration*ms)
+        Probe_int.constant(t+probe_XZ_duration*ms, 0, units="Vs")  
+        
+    MOT_XZ_flea.expose(t-0.01*ms,'abs_img', trigger_duration=probe_XZ_duration*ms+0.01*ms, frametype=frametype) 
+
+def probe_science(t, frametype):# science cell absorption imaging
+    if not frametype=='bg':
+        Cooling.setfreq(t-cooling_lock_time*ms, probe_science_cooling_freq*MHz)
+        Probe_int.constant(t, probe_science_int, units="Vs") 
+        Probe_AOM.go_high(t)        
+        Probe_shutter.open(t)               
+        
+        Probe_AOM.go_low(t+probe_science_duration*ms)
+        Probe_int.constant(t+probe_science_duration*ms, 0, units="Vs") 
+        
+    Science_flea.expose(t-0.01*ms,'science_img', trigger_duration=probe_science_duration*ms+0.01*ms, frametype=frametype)
+#)
+
+'''
+
+Debugging functions
+
+'''    
+#(
+def coil_current_monitor(start, end):
     testin0.acquire('curr0', start, end)
     testin1.acquire('curr1', start, end)
     testin2.acquire('curr2', start, end)    
@@ -324,7 +334,6 @@ def fluorescence(start, end):
     testin6.acquire('biasy', start, end)
     Repump_monitor.acquire('Repump_monitor', start, end)
     Cooling_monitor.acquire('Cooling_monitor', start, end)
-    # testin0_table.acquire('B_sensor', start, end)
     return 'Collected as fluo'
 #)
 

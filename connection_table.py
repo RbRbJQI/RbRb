@@ -20,7 +20,7 @@ ClockLine(name='ni_usb_6229_table2_clock', pseudoclock=pb0.pseudoclock, connecti
 ClockLine(name='ni_usb_6002_clock', pseudoclock=pb0.pseudoclock, connection='flag 7')
 Trigger(name='camera_trigger_Science_flea', parent_device=pb0.direct_outputs, connection='flag 5', trigger_edge_type='rising')
 Trigger(name='camera_trigger_MOT_XY_flea', parent_device=pb0.direct_outputs, connection='flag 6', trigger_edge_type='rising')
-Trigger(name='camera_trigger_MOT_YZ_flea', parent_device=pb0.direct_outputs, connection='flag 8', trigger_edge_type='rising')
+Trigger(name='camera_trigger_MOT_XZ_flea', parent_device=pb0.direct_outputs, connection='flag 8', trigger_edge_type='rising')
 Trigger(name='camera_trigger_PI', parent_device=pb0.direct_outputs, connection='flag 9', trigger_edge_type='rising')
 
 

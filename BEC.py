@@ -34,6 +34,15 @@ if molasses_repump_int_start < molasses_repump_int_end:
 if molasses_duration*ms < max(B_bias_respond_time*ms,cooling_lock_time*ms):
     message = 'User Warning: Effectively no molasses because cooling light is turned off in advance in Optical pumping!'
     sys.stderr.write(message+'\n')
+
+if molasses_cooling_freq_end < molasses_cooling_freq_start:
+    message = 'User Warning: Cooling gets less red detuned during molasses!'
+    sys.stderr.write(message+'\n')
+
+img_list = [Do_FluoImage, Do_transportImage, Do_AbsImage]    
+if np.count_nonzero(img_list)>1:
+    message = 'You are multiple types of images!'
+    sys.stderr.write(message+'\n')
 #)
 
 
@@ -47,11 +56,11 @@ start()
 t = 0
 Initial_State(t)
 
-t += 0.091
+t += 0.091 # This time matches the old script for easy comparison
 
 t = MOT_load(t)
 
-if Do_MOT_quad_trap or Do_transport:
+if Do_MOT_quad_trap:
     t = CMOT(t)
     print('t='+str(t)+', CMOT done!')
     t = molasses(t)
@@ -66,11 +75,15 @@ else:
 
 if Do_transport:
     t = Bidirectional_transport(t)
-    if Do_inverse:
+    if Do_inverse_transport:
         t = Bidirectional_transport(t, inverse=True)
 
-# fluorescence(0, t)
-fluorescence(t-transport_duration, t)
+if Do_transport:
+    coil_current_monitor(0,t)#t-transport_duration, t)
+
+if Do_evap:
+    t = evap(t)
+    print('t='+str(t)+', evap done!')
 
 t = Imaging_prep(t)
 
@@ -78,21 +91,25 @@ t += TOF*ms
 print('t='+str(t)+', TOF done!')
 
 if Do_AbsImage:
-    exec("probe_"+'yz'+"(t, probe_"+'yz'+"_time, 'atom')")
-    t += 0.2
-    exec("probe_"+'yz'+"(t, probe_"+'yz'+"_time, 'probe')")
+    exec("probe_"+probe_direction+"(t,'atom')")
     t += 0.1
-
+    exec("probe_"+probe_direction+"(t,'probe')")
+    t += 0.1
+    
 if Do_FluoImage:
     Fluo_image(t, 'fluo_img', shutter_turn_on=shutter_turn_on)
-    t += 0.3
+    t += 0.1
     Fluo_image(t, 'bg') # By default, shutters do not open in this function
-print('t='+str(t)+', Experiment done!')
 
 Initial_State(t)
+
 if Do_AbsImage or Do_transportImage:
     t += 0.1
-    exec("probe_"+'yz'+"(t, probe_"+'yz'+"_time, 'bg')")
-t += 1
+    exec("probe_"+probe_direction+"(t,'bg')")
+    probe_direction = 'XZ' # used in lyse analysis
+
+t += 0.1
+
+print('t='+str(t)+', Experiment done!')
 stop(t)
     
