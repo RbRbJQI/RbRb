@@ -63,23 +63,31 @@ t = MOT_load(t)
 if Do_MOT_quad_trap:
     t = CMOT(t)
     print('t='+str(t)+', CMOT done!')
+    
     t = molasses(t)
     print('t='+str(t)+', Molasses done!')
-    t = Opt_Pump(t)
-    print('t='+str(t)+', Optical pumping done!')    
-    t = MOT_cell_quad_trap(t)
-    print('t='+str(t)+', MOT cell quad trap done!') 
+    
+    # # Cooling lock monitor
+    # do8.go_high(t-OptPump_cooling_lock_time*ms) # Cooling freq starts to change for optical pumping.
+    # do8.go_low(t) # Cooling freq expected to settle.
+    
+    # t = Opt_Pump(t)
+    # print('t='+str(t)+', Optical pumping done!')  
+    
+    # t = MOT_cell_quad_trap(t)
+    # print('t='+str(t)+', MOT cell quad trap done!') 
     shutter_turn_on = True
 else:
     shutter_turn_on = False
 
 if Do_transport:
     t = Bidirectional_transport(t)
+    
     if Do_inverse_transport:
         t = Bidirectional_transport(t, inverse=True)
-
-if Do_transport:
-    coil_current_monitor(0,t)#t-transport_duration, t)
+    
+    # Monitor coil current
+    coil_current_monitor(0,t-transport_duration, t)
 
 if Do_evap:
     t = evap(t)

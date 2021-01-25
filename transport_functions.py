@@ -110,7 +110,6 @@ def Bidirectional_transport(t, inverse=False):
         for time in switch[ch].time_te_on:
             exec("coil_ch"+str(ch)+"_enable.go_high("+str(t+time)+")")
         # Turning the channels off adds more spikes in the current, read from Hall monitor.
-
             
     sample_rate=1/(transport_step_size*ms)
     def transport_currents(t, duration, I_channels_interp): # customramp requires the function to be in this specific format.
