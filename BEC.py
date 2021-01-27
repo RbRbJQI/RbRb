@@ -67,15 +67,15 @@ if Do_MOT_quad_trap:
     t = molasses(t)
     print('t='+str(t)+', Molasses done!')
     
-    # # Cooling lock monitor
-    # do8.go_high(t-OptPump_cooling_lock_time*ms) # Cooling freq starts to change for optical pumping.
-    # do8.go_low(t) # Cooling freq expected to settle.
+    # Cooling lock monitor
+    do8.go_high(t-OptPump_cooling_lock_time*ms) # Cooling freq starts to change for optical pumping.
+    do8.go_low(t) # Cooling freq expected to settle.
     
-    # t = Opt_Pump(t)
-    # print('t='+str(t)+', Optical pumping done!')  
+    t = Opt_Pump(t)
+    print('t='+str(t)+', Optical pumping done!')  
     
-    # t = MOT_cell_quad_trap(t)
-    # print('t='+str(t)+', MOT cell quad trap done!') 
+    t = MOT_cell_quad_trap(t)
+    print('t='+str(t)+', MOT cell quad trap done!') 
     shutter_turn_on = True
 else:
     shutter_turn_on = False
@@ -87,7 +87,7 @@ if Do_transport:
         t = Bidirectional_transport(t, inverse=True)
     
     # Monitor coil current
-    coil_current_monitor(0,t-transport_duration, t)
+    coil_current_monitor(t-transport_duration, t)
 
 if Do_evap:
     t = evap(t)
@@ -116,7 +116,7 @@ if Do_AbsImage or Do_transportImage:
     exec("probe_"+probe_direction+"(t,'bg')")
     probe_direction = 'XZ' # used in lyse analysis
 
-t += 0.1
+t += 3.1
 
 print('t='+str(t)+', Experiment done!')
 stop(t)

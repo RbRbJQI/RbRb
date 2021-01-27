@@ -54,7 +54,7 @@ DigitalOut(name='do8', parent_device=ni_usb_6229_table2, connection='port0/line8
 DigitalOut(name='do9', parent_device=ni_usb_6229_table2, connection='port0/line9')
 
 Shutter(name='Cooling_shutter', parent_device=ni_usb_6229_table2, connection='port0/line12', delay=(3*ms, 3*ms))
-Shutter(name='Repump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line15', delay=(6*ms, 3*ms))
+Shutter(name='Repump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line15', delay=(10*ms, 3*ms))
 Shutter(name='OptPump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line14', delay=(6*ms, 3.3*ms)) # minimum exposure 5ms of SR475
 Shutter(name='Probe_shutter', parent_device=ni_usb_6229_table2, connection='port0/line13', delay=(6*ms, 3*ms))
 

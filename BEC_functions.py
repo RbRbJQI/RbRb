@@ -13,11 +13,20 @@ General functions
 
 '''
 #(
-def set_bias(start, B_bias):
-    x_shim.constant(start, B_bias[0], units='A')
-    y_shim.constant(start, B_bias[1], units='A')
-    z_shim.constant(start, B_bias[2], units='A')
+def set_bias(t, B_bias):
+    x_shim.constant(t, B_bias[0], units='A')
+    y_shim.constant(t, B_bias[1], units='A')
+    z_shim.constant(t, B_bias[2], units='A')
 #)
+
+def set_science_bias(t, B_bias, duration):
+    coil_ch0.constant(t, B_bias, units="A")
+    coil_ch0_enable.go_high(t)
+    coil_ch0_0.go_high(t)
+    coil_ch0_1.go_high(t)
+    
+    coil_ch0.constant(t+duration, 0, units="A")
+    coil_ch0_enable.go_low(t+duration)
 
 '''
 Coil configuration functions
@@ -124,7 +133,7 @@ def MOT_load(t):
     
     Repump_AOM.go_high(t)
     Repump_int.constant(t, MOT_repump_int, units="Vs")
-    Repump_shutter.open(t)   
+    Repump_shutter.open(t) 
 
     return t + MOT_load_time   
 
@@ -136,6 +145,7 @@ def CMOT(t):
     CMOT_quad_curr_start = MOT_quad_curr
     CMOT_B_bias_start = np.array([MOT_B_bias_x,MOT_B_bias_y, MOT_B_bias_z])
     CMOT_B_bias_end = np.array([CMOT_B_bias_end_x,CMOT_B_bias_end_y,CMOT_B_bias_end_z])
+    CMOT_cooling_freq_start = MOT_cooling_freq
     
     exec(MOT_quad_ch + ".customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_quad_curr_start, CMOT_quad_curr_end, CMOT_duration*ms, samplerate=sample_rate, units='A')")
     x_shim.customramp(t, CMOT_duration*ms, HalfGaussRamp, CMOT_B_bias_start[0], CMOT_B_bias_end[0], CMOT_duration*ms, samplerate=sample_rate, units='A')
@@ -199,29 +209,22 @@ def MOT_cell_quad_trap(t):
     # start turning on quad coils at the end of optical pumping
     exec(MOT_quad_ch + "_enable.go_high(t-0.1*ms)")
     exec(MOT_quad_ch + ".constant(t-0.2*ms, quad_trap_quad_curr_start, units='A')")     
-    
-    # Move the atoms to the desired position
-    sample_rate=1/(0.2*ms)
-    
-    # Pass dynamic globals  
-    quad_trap_B_bias_start = np.array([B_zero_x,B_zero_y,B_zero_z]) # The starting bias is the same as in molasses.
-    quad_trap_B_bias_middle = np.array([quad_trap_B_bias_middle_x,quad_trap_B_bias_middle_y,quad_trap_B_bias_middle_z])
-    
-    x_shim.customramp(t, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[0], quad_trap_B_bias_middle[0], samplerate=sample_rate, units='A') 
-    y_shim.customramp(t, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[1], quad_trap_B_bias_middle[1], samplerate=sample_rate, units='A')
-    z_shim.customramp(t, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[2], quad_trap_B_bias_middle[2], samplerate=sample_rate, units='A')
+       
+    quad_trap_B_bias_start = np.array([quad_trap_B_bias_start_x,quad_trap_B_bias_start_y,quad_trap_B_bias_start_z])
+    x_shim.constant(t, quad_trap_B_bias_start[0], units='A') 
+    y_shim.constant(t, quad_trap_B_bias_start[1], units='A')
+    z_shim.constant(t, quad_trap_B_bias_start[2], units='A')
     
     # Compress the trap
-    sample_rate=1/(0.5*ms)   
-    exec(MOT_quad_ch + ".customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_quad_ramp_duration*ms, LineRamp, quad_trap_quad_curr_start, quad_trap_quad_curr_end, samplerate=sample_rate, units='A')")       
+    sample_rate=1/(0.2*ms)   
+    exec(MOT_quad_ch + ".customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_ramp_duration*ms, LineRamp, quad_trap_quad_curr_start, quad_trap_quad_curr_end, samplerate=sample_rate, units='A')")       
 
-    sample_rate=1/(0.2*ms)
     quad_trap_B_bias_end = np.array([quad_trap_B_bias_end_x,quad_trap_B_bias_end_y,quad_trap_B_bias_end_z])
-    x_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[0], quad_trap_B_bias_end[0], samplerate=sample_rate, units='A')  
-    y_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[1], quad_trap_B_bias_end[1], samplerate=sample_rate, units='A')
-    z_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_B_bias_ramp_duration*ms, LineRamp, quad_trap_B_bias_middle[2], quad_trap_B_bias_end[2], samplerate=sample_rate, units='A')
+    x_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[0], quad_trap_B_bias_end[0], samplerate=sample_rate, units='A')  
+    y_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[1], quad_trap_B_bias_end[1], samplerate=sample_rate, units='A')
+    z_shim.customramp(t+quad_trap_quad_ramp_start_delay*ms, quad_trap_ramp_duration*ms, LineRamp, quad_trap_B_bias_start[2], quad_trap_B_bias_end[2], samplerate=sample_rate, units='A')
     
-    return t + quad_trap_quad_ramp_start_delay*ms + quad_trap_quad_ramp_duration*ms + quad_trap_hold_time*ms
+    return t + quad_trap_quad_ramp_start_delay*ms + quad_trap_ramp_duration*ms + quad_trap_hold_time*ms
     
 def evap(t):
     evap_switch.go_high(t)
@@ -233,6 +236,7 @@ def evap(t):
     evap_switch.go_low(t+evap_duration)
     evap_int.constant(t+evap_duration, 0)
     evap_rf.setamp(t+evap_duration, 0)
+    
     return t + evap_duration
 #)
 
@@ -297,7 +301,22 @@ def probe_XZ(t, frametype):
         Probe_int.constant(t+probe_XZ_duration*ms, 0, units="Vs")  
         
     MOT_XZ_flea.expose(t-0.01*ms,'abs_img', trigger_duration=probe_XZ_duration*ms+0.01*ms, frametype=frametype) 
+    
+def probe_XY(t, frametype):
+    if not frametype=='bg':
+        Cooling.setfreq(t-cooling_lock_time*ms, probe_XY_cooling_freq*MHz)
+        OptPump_int.constant(t, probe_XY_int, units="Vs")
+        OptPump_AOM.go_high(t)
+        OptPump_shutter.open(t)
 
+        Repump_AOM.go_high(t)
+        Repump_int.constant(t, probe_XZ_repump_int, units="Vs")  
+        
+        OptPump_AOM.go_low(t+probe_XY_duration*ms)
+        OptPump_int.constant(t+probe_XY_duration*ms, 0, units="Vs")  
+        
+    MOT_XY_flea.expose(t-0.01*ms,'abs_img', trigger_duration=probe_XY_duration*ms+0.01*ms, frametype=frametype) 
+    
 def probe_science(t, frametype):# science cell absorption imaging
     if not frametype=='bg':
         Cooling.setfreq(t-cooling_lock_time*ms, probe_science_cooling_freq*MHz)
