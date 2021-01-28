@@ -86,11 +86,8 @@ if Do_transport:
     if Do_inverse_transport:
         t = Bidirectional_transport(t, inverse=True)
     
-    # Monitor coil current
-    coil_current_monitor(t-transport_duration, t)
-
-if Do_evap:
-    t = evap(t)
+if Do_evap:  
+    t = evap(t)    
     print('t='+str(t)+', evap done!')
 
 t = Imaging_prep(t)
@@ -116,7 +113,10 @@ if Do_AbsImage or Do_transportImage:
     exec("probe_"+probe_direction+"(t,'bg')")
     probe_direction = 'XZ' # used in lyse analysis
 
-t += 3.1
+t += 0.1
+
+# Monitor coil current
+coil_current_monitor(2, t)
 
 print('t='+str(t)+', Experiment done!')
 stop(t)

@@ -4,6 +4,7 @@ from labscriptlib.common.functions import *
 from labscript_utils import import_or_reload
 sys.path.append(r'C:\Users\RbRb\labscript-suite\userlib\labscriptlib\RbRb')
 
+
 MHz = 1e6
 us = 1e-6
 ms = 1e-3
@@ -13,20 +14,29 @@ General functions
 
 '''
 #(
+# Override the "shutter" class "close" method
+class our_Shutter(Shutter):
+    def __init__(self, *args, **kwargs):
+        Shutter.__init__(self, *args, **kwargs)
+
+    def close(self, t):
+        if not Keep_warm:
+            Shutter.close(self, t)
+        else:
+            Shutter.open(self, t)
+
+            
 def set_bias(t, B_bias):
     x_shim.constant(t, B_bias[0], units='A')
     y_shim.constant(t, B_bias[1], units='A')
     z_shim.constant(t, B_bias[2], units='A')
-#)
 
-def set_science_bias(t, B_bias, duration):
+def set_science_bias(t, B_bias):
     coil_ch0.constant(t, B_bias, units="A")
     coil_ch0_enable.go_high(t)
     coil_ch0_0.go_high(t)
     coil_ch0_1.go_high(t)
-    
-    coil_ch0.constant(t+duration, 0, units="A")
-    coil_ch0_enable.go_low(t+duration)
+#)
 
 '''
 Coil configuration functions
@@ -103,7 +113,10 @@ def Initial_State(t):
     
     OptPump_AOM.go_low(t)
     OptPump_int.constant(t, 0, units="Vs")
-    OptPump_shutter.close(t)      
+    OptPump_shutter.close(t)  
+
+    Repump_science_int.constant(t, 0, units="Vs")
+    Repump_science_shutter.close(t)   
 
 # Other    
     UV.go_low(t)
@@ -227,10 +240,12 @@ def MOT_cell_quad_trap(t):
     return t + quad_trap_quad_ramp_start_delay*ms + quad_trap_ramp_duration*ms + quad_trap_hold_time*ms
     
 def evap(t):
+    # RF
     evap_switch.go_high(t)
     evap_int.constant(t, evap_int_saturation) 
     evap_rf.setamp(t, evap_rf_Novatech_amp) 
     
+    # Coils
     evap_rf.frequency.customramp(t, evap_duration, LineRamp, evap_rf_freq_start*MHz, evap_rf_freq_end*MHz, samplerate = 1/(evap_step_size*ms))
     
     evap_switch.go_low(t+evap_duration)
@@ -249,12 +264,15 @@ Imaging
 def Imaging_prep(t): 
     # Coils
     All_coil_off(t)
-    
+        
     if Do_FluoImage:
         set_bias(t, [0,0,0]) 
     elif Do_AbsImage or Do_transportImage:
-        exec("set_bias(t, probe_" + probe_direction + "_B_Bias)")
-    
+        if probe_direction == 'science':
+            set_bias(t, probe_science_B_bias)
+        else:
+            exec("set_bias(t, probe_" + probe_direction + "_B_bias)")
+                        
     # Lasers
     Probe_AOM.go_low(t)
     Probe_int.constant(t, 0, units="Vs")
@@ -324,10 +342,13 @@ def probe_science(t, frametype):# science cell absorption imaging
         Probe_AOM.go_high(t)        
         Probe_shutter.open(t)               
         
-        Probe_AOM.go_low(t+probe_science_duration*ms)
-        Probe_int.constant(t+probe_science_duration*ms, 0, units="Vs") 
+        Repump_science_int.constant(t, probe_science_repump_int, units="Vs")
+        Repump_science_shutter.open(t) 
         
-    Science_flea.expose(t-0.01*ms,'science_img', trigger_duration=probe_science_duration*ms+0.01*ms, frametype=frametype)
+        Probe_AOM.go_low(t+probe_science_duration*ms)
+        Probe_int.constant(t+probe_science_duration*ms, 0, units="Vs")  
+        
+    Science_flea.expose(t-0.01*ms,'abs_img', trigger_duration=probe_science_duration*ms+0.01*ms, frametype=frametype)
 #)
 
 '''

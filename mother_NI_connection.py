@@ -11,6 +11,9 @@ from labscript_devices.NI_DAQmx.labscript_devices import NI_PCIe_6738
 from labscript_devices.NI_DAQmx.labscript_devices import NI_DAQmx
 from labscript_devices.NI_DAQmx.labscript_devices import NI_USB_6002
 
+sys.path.append(r'C:\Users\RbRb\labscript-suite\userlib\labscriptlib\RbRb')
+import_or_reload('labscriptlib.RbRb.BEC_functions') # to make sure the globals in runmanager are reloaded
+from labscriptlib.RbRb.BEC_functions import our_Shutter
 
 '''
 
@@ -53,10 +56,12 @@ DigitalOut(name='do7', parent_device=ni_usb_6229_table2, connection='port0/line7
 DigitalOut(name='do8', parent_device=ni_usb_6229_table2, connection='port0/line8')
 DigitalOut(name='do9', parent_device=ni_usb_6229_table2, connection='port0/line9')
 
-Shutter(name='Cooling_shutter', parent_device=ni_usb_6229_table2, connection='port0/line12', delay=(3*ms, 3*ms))
-Shutter(name='Repump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line15', delay=(10*ms, 3*ms))
-Shutter(name='OptPump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line14', delay=(6*ms, 3.3*ms)) # minimum exposure 5ms of SR475
-Shutter(name='Probe_shutter', parent_device=ni_usb_6229_table2, connection='port0/line13', delay=(6*ms, 3*ms))
+our_Shutter(name='do10', parent_device=ni_usb_6229_table2, connection='port0/line10')
+our_Shutter(name='Repump_science_shutter', parent_device=ni_usb_6229_table2, connection='port0/line11', delay=(3*ms, 3*ms))
+our_Shutter(name='Cooling_shutter', parent_device=ni_usb_6229_table2, connection='port0/line12', delay=(3*ms, 3*ms))
+our_Shutter(name='Repump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line15', delay=(10*ms, 3*ms))
+our_Shutter(name='OptPump_shutter', parent_device=ni_usb_6229_table2, connection='port0/line14', delay=(6*ms, 3.3*ms)) # minimum exposure 5ms of SR475
+our_Shutter(name='Probe_shutter', parent_device=ni_usb_6229_table2, connection='port0/line13', delay=(6*ms, 3*ms))
 
 AnalogOut(name='quad_MOT2', parent_device=ni_usb_6229_table2, connection='ao0')
 AnalogOut(name='x_shim', parent_device=ni_usb_6229_table2, connection='ao1', unit_conversion_class=BidirectionalCoilDriver, unit_conversion_parameters={'slope':1.96, 'shift':-0.11*1.96})
@@ -86,7 +91,7 @@ AnalogOut(name='Cooling_int', parent_device=ni_pcie_6738, connection='ao3', unit
 AnalogOut(name='Probe_int', parent_device=ni_pcie_6738, connection='ao4', unit_conversion_class=AOMAMP, unit_conversion_parameters={'shift':0.060})
 AnalogOut(name='OptPump_int', parent_device=ni_pcie_6738, connection='ao5', unit_conversion_class=AOMAMP, unit_conversion_parameters={'shift':0.060})
 AnalogOut(name='evap_int', parent_device=ni_pcie_6738, connection='ao6')
-AnalogOut(name='Dipole_Power_tot_int', parent_device=ni_pcie_6738, connection='ao7')
+AnalogOut(name='Repump_science_int', parent_device=ni_pcie_6738, connection='ao7', unit_conversion_class=AOMAMP, unit_conversion_parameters={'shift':-0.020})
 AnalogOut(name='Dipole_Power_1_int', parent_device=ni_pcie_6738, connection='ao8')
 AnalogOut(name='Dipole_Power_2_int', parent_device=ni_pcie_6738, connection='ao9')
 
