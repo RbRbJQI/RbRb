@@ -113,10 +113,10 @@ if Do_AbsImage or Do_transportImage:
     exec("probe_"+probe_direction+"(t,'bg')")
     probe_direction = 'XZ' # used in lyse analysis
 
-t += 0.1
-
 # Monitor coil current
-coil_current_monitor(2, t)
+coil_current_monitor(0, t)
+
+t += 0.1
 
 print('t='+str(t)+', Experiment done!')
 stop(t)

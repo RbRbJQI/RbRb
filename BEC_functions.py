@@ -32,10 +32,8 @@ def set_bias(t, B_bias):
     z_shim.constant(t, B_bias[2], units='A')
 
 def set_science_bias(t, B_bias):
-    coil_ch0.constant(t, B_bias, units="A")
-    coil_ch0_enable.go_high(t)
-    coil_ch0_0.go_high(t)
-    coil_ch0_1.go_high(t)
+    Science_Bias_x.constant(t, B_bias[0], units="A")
+
 #)
 
 '''
@@ -92,6 +90,8 @@ def Initial_State(t):
     outer_coil_1_select(t)
     inner_coil_1_select(t)
     outer_coil_2_select(t)
+    set_science_bias(t, [0,0,0])
+    set_bias(t, [MOT_B_bias_x,MOT_B_bias_y,MOT_B_bias_z])
     
 # Lasers
     Cooling.setfreq(t, MOT_cooling_freq*MHz)
@@ -269,7 +269,8 @@ def Imaging_prep(t):
         set_bias(t, [0,0,0]) 
     elif Do_AbsImage or Do_transportImage:
         if probe_direction == 'science':
-            set_bias(t, probe_science_B_bias)
+            set_science_bias(t, [probe_science_B_bias_x,0,0])
+            Repump.setfreq(t, probe_science_repump_freq*MHz)
         else:
             exec("set_bias(t, probe_" + probe_direction + "_B_bias)")
                         

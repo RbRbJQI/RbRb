@@ -94,7 +94,8 @@ AnalogOut(name='evap_int', parent_device=ni_pcie_6738, connection='ao6')
 AnalogOut(name='Repump_science_int', parent_device=ni_pcie_6738, connection='ao7', unit_conversion_class=AOMAMP, unit_conversion_parameters={'shift':-0.020})
 AnalogOut(name='Dipole_Power_1_int', parent_device=ni_pcie_6738, connection='ao8')
 AnalogOut(name='Dipole_Power_2_int', parent_device=ni_pcie_6738, connection='ao9')
-
+AnalogOut(name='Science_Bias_x', parent_device=ni_pcie_6738, connection='ao10', unit_conversion_class=BidirectionalCoilDriver, unit_conversion_parameters={'slope':1.96, 'shift':0*1.96})
+AnalogOut(name='Science_Bias_y', parent_device=ni_pcie_6738, connection='ao11', unit_conversion_class=BidirectionalCoilDriver, unit_conversion_parameters={'slope':1.96, 'shift':0*1.96})
 
 
 '''
