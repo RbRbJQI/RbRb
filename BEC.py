@@ -81,6 +81,9 @@ else:
     shutter_turn_on = False
 
 if Do_transport:
+    if Do_transport_shim_coil_kepco:
+        Science_Bias_y.constant(t+transport_shim0_start*transport_duration, transport_shim0_curr, units="A")
+        Science_Bias_y.constant(t+transport_shim0_end*transport_duration, 0, units="A")
     t = Bidirectional_transport(t)
     
     if Do_inverse_transport:
@@ -116,7 +119,7 @@ if Do_AbsImage or Do_transportImage:
 # Monitor coil current
 coil_current_monitor(0, t)
 
-t += 0.1
+t += 5 
 
 print('t='+str(t)+', Experiment done!')
 stop(t)

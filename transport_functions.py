@@ -69,14 +69,16 @@ def Bidirectional_transport(t, inverse=False):
             transport_shim_curr  = eval('transport_shim'+str(shim_ind)+'_curr')
             I_coils_shim[shim_ind, round(start):round(end)] = transport_shim_curr
             ramp_dur = transport_shim_ramp_dur
-            # #ramp up
-            # start_ramp, end_ramp = start, start+int(ramp_dur*len(I_coils[0]))
-            # t_ramp = np.arange(0, end_ramp-start_ramp)
-            # I_coils_shim[shim_ind, round(start_ramp):round(end_ramp)] = t_ramp/(end_ramp-start_ramp)* transport_shim_curr
-            # #ramp down
-            # start_ramp, end_ramp = end-int(ramp_dur*len(I_coils[0])), end
-            # t_ramp = np.arange(0, end_ramp-start_ramp)
-            # I_coils_shim[shim_ind, round(start_ramp):round(end_ramp)] = transport_shim_curr* (1-t_ramp/(end_ramp-start_ramp))
+            ramp_shim = 0
+            if ramp_shim:
+                #ramp up
+                start_ramp, end_ramp = start, start+int(ramp_dur*len(I_coils[0]))
+                t_ramp = np.arange(0, end_ramp-start_ramp)
+                I_coils_shim[shim_ind, round(start_ramp):round(end_ramp)] = t_ramp/(end_ramp-start_ramp)* transport_shim_curr
+                #ramp down
+                start_ramp, end_ramp = end-int(ramp_dur*len(I_coils[0])), end
+                t_ramp = np.arange(0, end_ramp-start_ramp)
+                I_coils_shim[shim_ind, round(start_ramp):round(end_ramp)] = transport_shim_curr* (1-t_ramp/(end_ramp-start_ramp))
             if inverse:
                 I_coils_shim[shim_ind] = np.array(np.flip(I_coils_shim[shim_ind]))
         I_coils = np.vstack((I_coils, I_coils_shim))

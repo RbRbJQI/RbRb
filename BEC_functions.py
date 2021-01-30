@@ -91,7 +91,8 @@ def Initial_State(t):
     inner_coil_1_select(t)
     outer_coil_2_select(t)
     set_science_bias(t, [0,0,0])
-    set_bias(t, [MOT_B_bias_x,MOT_B_bias_y,MOT_B_bias_z])
+    Science_Bias_y.constant(t, 0, units="A")
+    set_bias(t, [MOT_B_bias_x*0,MOT_B_bias_y*0,MOT_B_bias_z*0]) 
     
 # Lasers
     Cooling.setfreq(t, MOT_cooling_freq*MHz)
@@ -269,6 +270,7 @@ def Imaging_prep(t):
         set_bias(t, [0,0,0]) 
     elif Do_AbsImage or Do_transportImage:
         if probe_direction == 'science':
+            set_bias(t, [0,0,0]) 
             set_science_bias(t, [probe_science_B_bias_x,0,0])
             Repump.setfreq(t, probe_science_repump_freq*MHz)
         else:
